@@ -67,6 +67,33 @@ npm run build
 
 Los archivos quedan en `dist/`.
 
+## Deploy rápido del frontend
+
+El frontend es una SPA de Vite. Eso significa que el hosting debe reenviar las rutas del navegador a `index.html` para que funcionen URLs como `/catalogo`, `/propiedad/casa-centro` o `/admin/login`.
+
+### Vercel
+
+- Importá el repositorio desde GitHub.
+- Framework preset: **Vite**
+- Build command: `npm run build`
+- Output directory: `dist`
+- Variable de entorno: `VITE_API_URL=https://tu-backend/api`
+- El archivo `vercel.json` ya deja configurado el rewrite de rutas.
+
+### Netlify
+
+- Importá el repositorio desde GitHub.
+- Build command: `npm run build`
+- Publish directory: `dist`
+- Variable de entorno: `VITE_API_URL=https://tu-backend/api`
+- El archivo `public/_redirects` ya deja configurado el fallback SPA.
+
+### Importante sobre el backend
+
+- **Vercel y Netlify sirven para el frontend**, no para el backend Java/Tomcat de este repo.
+- Para la API necesitás un servidor aparte con **Java 17 + Tomcat 10+**.
+- En producción conviene usar **MySQL** y definir `JWT_SECRET`, `FRONTEND_URL`, y si corresponde `SMTP_USER` / `SMTP_APP_PASSWORD`.
+
 ## Subir a la red (que lo use el usuario final)
 
 Sí, con esto podés subir la app a internet y que los usuarios entren al sitio y los admins usen el panel con normalidad.
