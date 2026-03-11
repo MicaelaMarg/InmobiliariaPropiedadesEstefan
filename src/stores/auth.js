@@ -33,7 +33,7 @@ export const useAuthStore = defineStore('auth', () => {
     try {
       const body = { email: (email || '').trim(), password: password || '' }
       if (turnstileToken) body.turnstileToken = turnstileToken
-      const res = await fetch(`${BASE_URL}/admin/login`, {
+      const res = await fetch(`${BASE_URL}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
