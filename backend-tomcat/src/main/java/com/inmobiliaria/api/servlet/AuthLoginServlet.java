@@ -13,7 +13,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
-@WebServlet("/auth/login")
+@WebServlet("/api/auth/login")
 public class AuthLoginServlet extends HttpServlet {
   private static final long JWT_EXPIRATION_MS = 24 * 60 * 60 * 1000L; // 24 horas
 
