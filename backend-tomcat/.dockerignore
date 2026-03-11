@@ -1,0 +1,9 @@
+target/
+*.iml
+.idea/
+.settings/
+.project
+.classpath
+*.log
+*.md
+!README.md
