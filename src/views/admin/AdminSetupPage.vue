@@ -2,7 +2,8 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 
-const BASE_URL = (import.meta.env.VITE_API_URL || '').replace(/\/+$/, '')
+import { API_BASE_URL } from '../../config/api'
+const BASE_URL = API_BASE_URL
 
 const router = useRouter()
 const email = ref('')

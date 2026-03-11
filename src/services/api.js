@@ -1,6 +1,7 @@
-// Cliente API base. En producción reemplazar por llamadas reales (axios/fetch) al backend.
+// Cliente API base. Usa config para normalizar la URL (siempre termina en /api).
+import { API_BASE_URL } from '../config/api'
 
-const BASE_URL = import.meta.env.VITE_API_URL || ''
+const BASE_URL = API_BASE_URL
 
 function getAuthHeaders() {
   const auth = localStorage.getItem('inmobiliaria_auth')

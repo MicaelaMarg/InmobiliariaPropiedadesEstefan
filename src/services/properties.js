@@ -1,8 +1,7 @@
 // Servicio de propiedades. Usa mock data si no hay backend configurado.
 
 import { getMockProperties } from '../data/mockProperties'
-
-const API_BASE_URL = (import.meta.env.VITE_API_URL || '').replace(/\/+$/, '')
+import { API_BASE_URL } from '../config/api'
 const USE_MOCK = !API_BASE_URL
 const MOCK_STORAGE_KEY = 'inmobiliaria_mock_properties'
 

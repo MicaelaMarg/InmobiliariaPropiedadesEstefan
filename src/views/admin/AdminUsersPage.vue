@@ -2,11 +2,11 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../../stores/auth'
+import { API_BASE_URL } from '../../config/api'
 
 const router = useRouter()
 const authStore = useAuthStore()
-
-const BASE_URL = (import.meta.env.VITE_API_URL || '').replace(/\/+$/, '')
+const BASE_URL = API_BASE_URL
 // Si el backend está en /inmobiliaria-api, usar esta URL cuando la principal dé 404
 const BASE_URL_ALT = BASE_URL.includes('/inmobiliaria-api/')
   ? BASE_URL

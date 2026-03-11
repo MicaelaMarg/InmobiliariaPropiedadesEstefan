@@ -2,7 +2,8 @@
 import { ref, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 
-const BASE_URL = (import.meta.env.VITE_API_URL || '').replace(/\/+$/, '')
+import { API_BASE_URL } from '../../config/api'
+const BASE_URL = API_BASE_URL
 
 const router = useRouter()
 const route = useRoute()

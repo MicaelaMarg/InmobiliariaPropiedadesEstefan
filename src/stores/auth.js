@@ -1,8 +1,9 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
+import { API_BASE_URL } from '../config/api'
 
 const STORAGE_KEY = 'inmobiliaria_auth'
-const BASE_URL = (import.meta.env.VITE_API_URL || '').replace(/\/+$/, '')
+const BASE_URL = API_BASE_URL
 
 export const useAuthStore = defineStore('auth', () => {
   const user = ref(null)
