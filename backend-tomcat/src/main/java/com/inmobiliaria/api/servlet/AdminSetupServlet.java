@@ -1,44 +1,61 @@
 package com.inmobiliaria.api.servlet;
 
-import com.inmobiliaria.api.repository.AdminRepository;
+import com.inmobiliaria.api.repository.Database;
 import com.inmobiliaria.api.util.JsonUtil;
-import com.inmobiliaria.api.util.PasswordUtil;
 
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.util.HashMap;
 import java.util.Map;
 
 @WebServlet("/api/admin/setup")
 public class AdminSetupServlet extends HttpServlet {
 
-  private final AdminRepository repository = new AdminRepository();
-
   @Override
   protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws IOException {
 
-    Map<String, String> body = JsonUtil.readJson(req);
+    StringBuilder body = new StringBuilder();
+    BufferedReader reader = req.getReader();
+    String line;
 
-    String email = body.get("email");
-    String password = body.get("password");
+    while ((line = reader.readLine()) != null) {
+      body.append(line);
+    }
+
+    Map<String, String> data = JsonUtil.parse(body.toString());
+
+    String email = data.get("email");
+    String password = data.get("password");
 
     if (email == null || password == null) {
       JsonUtil.writeError(resp, 400, "Datos incompletos");
       return;
     }
 
-    if (repository.countAdmins() > 0) {
-      JsonUtil.writeError(resp, 400, "Ya existe un administrador");
-      return;
+    try (Connection conn = Database.getConnection()) {
+
+      String sql = "INSERT INTO admin_users (email, password_hash) VALUES (?, ?)";
+      PreparedStatement ps = conn.prepareStatement(sql);
+
+      ps.setString(1, email);
+      ps.setString(2, password);
+
+      ps.executeUpdate();
+
+      Map<String, Object> result = new HashMap<>();
+      result.put("success", true);
+
+      JsonUtil.writeJson(resp, HttpServletResponse.SC_OK, result);
+
+    } catch (Exception e) {
+      JsonUtil.writeError(resp, 500, "No se pudo crear la cuenta");
     }
-
-    String hash = PasswordUtil.hash(password);
-
-    repository.createAdmin(email, hash);
-
-    JsonUtil.writeJson(resp, 200, Map.of("success", true));
   }
 }
