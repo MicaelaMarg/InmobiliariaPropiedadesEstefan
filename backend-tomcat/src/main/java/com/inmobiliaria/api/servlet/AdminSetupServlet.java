@@ -14,7 +14,7 @@ import java.sql.PreparedStatement;
 import java.util.HashMap;
 import java.util.Map;
 
-@WebServlet("/api/admin/setup")
+@WebServlet("/api/auth/setup")
 public class AdminSetupServlet extends HttpServlet {
 
   @Override
