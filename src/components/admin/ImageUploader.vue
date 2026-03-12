@@ -9,6 +9,8 @@ const props = defineProps({
 const emit = defineEmits(['update:modelValue'])
 const input = ref(null)
 const uploading = ref(false)
+const MAX_DIMENSION = 1600
+const JPEG_QUALITY = 0.8
 
 const images = ref(props.modelValue.length ? props.modelValue.map(img => ({ url: img.url, order: img.order ?? 0, isPrimary: !!img.isPrimary })) : [])
 
@@ -30,6 +32,42 @@ function fileToDataUrl(file) {
   })
 }
 
+function loadImage(file) {
+  return new Promise((resolve, reject) => {
+    const objectUrl = URL.createObjectURL(file)
+    const image = new Image()
+    image.onload = () => {
+      URL.revokeObjectURL(objectUrl)
+      resolve(image)
+    }
+    image.onerror = () => {
+      URL.revokeObjectURL(objectUrl)
+      reject(new Error('No se pudo procesar la imagen'))
+    }
+    image.src = objectUrl
+  })
+}
+
+async function fileToOptimizedDataUrl(file) {
+  const image = await loadImage(file)
+  const longestSide = Math.max(image.width, image.height)
+  const scale = longestSide > MAX_DIMENSION ? MAX_DIMENSION / longestSide : 1
+
+  const canvas = document.createElement('canvas')
+  canvas.width = Math.max(1, Math.round(image.width * scale))
+  canvas.height = Math.max(1, Math.round(image.height * scale))
+
+  const context = canvas.getContext('2d')
+  if (!context) {
+    return fileToDataUrl(file)
+  }
+
+  context.drawImage(image, 0, 0, canvas.width, canvas.height)
+
+  // Usamos JPEG para bajar tamaño manteniendo buena calidad visual en catálogo.
+  return canvas.toDataURL('image/jpeg', JPEG_QUALITY)
+}
+
 async function addFiles(files) {
   if (!files?.length) return
   uploading.value = true
@@ -37,7 +75,7 @@ async function addFiles(files) {
   try {
     for (const file of toAdd) {
       if (!file.type.startsWith('image/')) continue
-      const url = await fileToDataUrl(file)
+      const url = await fileToOptimizedDataUrl(file)
       images.value.push({
         url,
         order: images.value.length,
@@ -92,7 +130,7 @@ function triggerInput() {
         {{ uploading ? 'Procesando...' : 'Subir imágenes' }}
       </button>
     </div>
-    <p class="text-xs text-gray-500">Podés elegir la imagen principal y reordenar. Máximo {{ maxFiles }}.</p>
+    <p class="text-xs text-gray-500">Podés elegir la imagen principal y reordenar. Máximo {{ maxFiles }}. Las imágenes se optimizan antes de guardarse.</p>
     <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
       <div
         v-for="(img, i) in images"
