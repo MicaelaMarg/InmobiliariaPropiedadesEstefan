@@ -40,22 +40,36 @@ function createDefaultForm() {
 
 const form = ref(createDefaultForm())
 const featuresText = ref('')
-let syncingFromParent = false
 
 function arraysEqual(a = [], b = []) {
   return JSON.stringify(a) === JSON.stringify(b)
 }
 
-function syncFromModelValue(value = {}) {
-  syncingFromParent = true
+function normalizeForm(value = {}) {
   const nextFeatures = Array.isArray(value.features) ? value.features : []
-  form.value = {
+  return {
     ...createDefaultForm(),
     ...value,
     features: nextFeatures,
   }
-  featuresText.value = nextFeatures.join(', ')
-  syncingFromParent = false
+}
+
+function serializeForm(value = {}) {
+  return JSON.stringify(normalizeForm(value))
+}
+
+function syncFromModelValue(value = {}) {
+  const normalized = normalizeForm(value)
+  if (serializeForm(form.value) === JSON.stringify(normalized)) {
+    const nextFeaturesText = normalized.features.join(', ')
+    if (featuresText.value !== nextFeaturesText) {
+      featuresText.value = nextFeaturesText
+    }
+    return
+  }
+
+  form.value = normalized
+  featuresText.value = normalized.features.join(', ')
 }
 
 watch(
@@ -63,14 +77,15 @@ watch(
   (v) => {
     syncFromModelValue(v)
   },
-  { deep: true, immediate: true }
+  { immediate: true }
 )
 
 watch(
   form,
   (v) => {
-    if (syncingFromParent) return
-    emit('update:modelValue', { ...v })
+    const normalized = normalizeForm(v)
+    if (serializeForm(props.modelValue) === JSON.stringify(normalized)) return
+    emit('update:modelValue', normalized)
   },
   { deep: true }
 )
