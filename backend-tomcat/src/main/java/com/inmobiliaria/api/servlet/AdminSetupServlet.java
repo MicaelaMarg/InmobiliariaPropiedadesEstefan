@@ -8,7 +8,6 @@ import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -21,18 +20,8 @@ public class AdminSetupServlet extends HttpServlet {
   @Override
   protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws IOException {
 
-    StringBuilder body = new StringBuilder();
-    BufferedReader reader = req.getReader();
-    String line;
-
-    while ((line = reader.readLine()) != null) {
-      body.append(line);
-    }
-
-    Map<String, String> data = JsonUtil.parse(body.toString());
-
-    String email = data.get("email");
-    String password = data.get("password");
+    String email = req.getParameter("email");
+    String password = req.getParameter("password");
 
     if (email == null || password == null) {
       JsonUtil.writeError(resp, 400, "Datos incompletos");
