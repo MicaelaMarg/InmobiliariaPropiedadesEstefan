@@ -8,7 +8,8 @@ const props = defineProps({
 
 const emit = defineEmits(['update:modelValue'])
 
-const form = ref({
+function createDefaultForm() {
+  return {
   title: '',
   type: 'casa',
   category: 'inmueble',
@@ -34,29 +35,50 @@ const form = ref({
   contactPhone: '',
   contactEmail: '',
   observations: '',
-  ...props.modelValue,
-})
+  }
+}
+
+const form = ref(createDefaultForm())
+const featuresText = ref('')
+let syncingFromParent = false
+
+function arraysEqual(a = [], b = []) {
+  return JSON.stringify(a) === JSON.stringify(b)
+}
+
+function syncFromModelValue(value = {}) {
+  syncingFromParent = true
+  const nextFeatures = Array.isArray(value.features) ? value.features : []
+  form.value = {
+    ...createDefaultForm(),
+    ...value,
+    features: nextFeatures,
+  }
+  featuresText.value = nextFeatures.join(', ')
+  syncingFromParent = false
+}
 
 watch(
   () => props.modelValue,
   (v) => {
-    if (v && Object.keys(v).length) {
-      form.value = { ...form.value, ...v }
-      featuresText.value = (v.features || []).join(', ')
-    }
+    syncFromModelValue(v)
   },
-  { deep: true }
+  { deep: true, immediate: true }
 )
 
 watch(
   form,
-  (v) => emit('update:modelValue', { ...v }),
+  (v) => {
+    if (syncingFromParent) return
+    emit('update:modelValue', { ...v })
+  },
   { deep: true }
 )
 
-const featuresText = ref((props.modelValue.features || []).join(', '))
 watch(featuresText, (t) => {
-  form.value.features = t.split(',').map(s => s.trim()).filter(Boolean)
+  const nextFeatures = t.split(',').map(s => s.trim()).filter(Boolean)
+  if (arraysEqual(form.value.features, nextFeatures)) return
+  form.value = { ...form.value, features: nextFeatures }
 }, { immediate: true })
 </script>
 
