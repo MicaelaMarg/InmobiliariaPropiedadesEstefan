@@ -18,13 +18,15 @@ public class PublicPropertiesServlet extends HttpServlet {
       JsonUtil.writeJson(
         resp,
         HttpServletResponse.SC_OK,
-        repository.findPublic(
+        repository.findPublicPage(
           req.getParameter("operation"),
           req.getParameter("type"),
           parseDouble(req.getParameter("minPrice")),
           parseDouble(req.getParameter("maxPrice")),
           req.getParameter("location"),
-          parseBoolean(req.getParameter("featured"))
+          parseBoolean(req.getParameter("featured")),
+          parseInteger(req.getParameter("page")),
+          parseInteger(req.getParameter("limit"))
         )
       );
     } catch (Exception e) {
@@ -38,6 +40,17 @@ public class PublicPropertiesServlet extends HttpServlet {
     }
     try {
       return Double.parseDouble(value);
+    } catch (NumberFormatException e) {
+      return null;
+    }
+  }
+
+  private Integer parseInteger(String value) {
+    if (value == null || value.isBlank()) {
+      return null;
+    }
+    try {
+      return Integer.parseInt(value);
     } catch (NumberFormatException e) {
       return null;
     }

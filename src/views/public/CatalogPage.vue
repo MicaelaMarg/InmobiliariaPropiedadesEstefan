@@ -11,6 +11,10 @@ const route = useRoute()
 const properties = ref([])
 const loading = ref(true)
 const filters = ref({})
+const page = ref(1)
+const pageSize = 12
+const total = ref(0)
+const totalPages = ref(1)
 
 const queryFromRoute = computed(() => route.query.q || '')
 
@@ -25,21 +29,40 @@ onMounted(() => {
   load()
 })
 
-async function load() {
+async function load(nextPage = page.value) {
   loading.value = true
   try {
     const f = { ...filters.value }
     if (queryFromRoute.value) f.location = queryFromRoute.value
-    properties.value = await fetchPropertiesPublic(f)
+    f.page = nextPage
+    f.limit = pageSize
+    const result = await fetchPropertiesPublic(f)
+    properties.value = result.items || []
+    total.value = result.total || 0
+    page.value = result.page || nextPage
+    totalPages.value = result.totalPages || 1
   } catch {
     properties.value = []
+    total.value = 0
+    totalPages.value = 1
   } finally {
     loading.value = false
   }
 }
 
 function onSearch() {
-  load()
+  page.value = 1
+  load(1)
+}
+
+function previousPage() {
+  if (page.value <= 1) return
+  load(page.value - 1)
+}
+
+function nextPage() {
+  if (page.value >= totalPages.value) return
+  load(page.value + 1)
 }
 </script>
 
@@ -58,6 +81,20 @@ function onSearch() {
       />
       <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         <PropertyCard v-for="prop in properties" :key="prop.id" :property="prop" />
+      </div>
+      <div v-if="properties.length" class="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <p class="text-sm text-gray-500">
+          Mostrando {{ properties.length }} de {{ total }} propiedades
+        </p>
+        <div class="flex items-center gap-3">
+          <button type="button" class="btn-secondary text-sm" :disabled="page <= 1" @click="previousPage">
+            Anterior
+          </button>
+          <span class="text-sm text-gray-600">Página {{ page }} de {{ totalPages }}</span>
+          <button type="button" class="btn-primary text-sm" :disabled="page >= totalPages" @click="nextPage">
+            Siguiente
+          </button>
+        </div>
       </div>
     </template>
   </div>

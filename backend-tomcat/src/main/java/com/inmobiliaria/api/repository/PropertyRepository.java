@@ -20,6 +20,8 @@ import java.util.Map;
 
 public class PropertyRepository {
   private static final Type FEATURES_TYPE = new TypeToken<List<String>>() { }.getType();
+  private static final int DEFAULT_PUBLIC_PAGE_SIZE = 12;
+  private static final int MAX_PUBLIC_PAGE_SIZE = 48;
   private static final String BASE_SELECT = """
     select id, slug, title, type, category, operation, price, currency, location, address, city, area,
            total_area, covered_area, bedrooms, bathrooms, rooms, state, description, features,
@@ -30,36 +32,77 @@ public class PropertyRepository {
 
   public List<Property> findPublic(String operation, String type, Double minPrice, Double maxPrice, String location, Boolean featured)
     throws SQLException {
+    return findPublicPage(operation, type, minPrice, maxPrice, location, featured, 1, DEFAULT_PUBLIC_PAGE_SIZE).items;
+  }
+
+  public PublicPropertyPage findPublicPage(
+    String operation,
+    String type,
+    Double minPrice,
+    Double maxPrice,
+    String location,
+    Boolean featured,
+    Integer page,
+    Integer limit
+  ) throws SQLException {
     StringBuilder sql = new StringBuilder(BASE_SELECT)
       .append(" where is_published = true and status = 'available'");
+    StringBuilder countSql = new StringBuilder("select count(*) from properties where is_published = true and status = 'available'");
     List<Object> params = new ArrayList<>();
 
     if (notBlank(operation)) {
       sql.append(" and operation = ?");
+      countSql.append(" and operation = ?");
       params.add(operation);
     }
     if (notBlank(type)) {
       sql.append(" and type = ?");
+      countSql.append(" and type = ?");
       params.add(type);
     }
     if (minPrice != null) {
       sql.append(" and price >= ?");
+      countSql.append(" and price >= ?");
       params.add(minPrice);
     }
     if (maxPrice != null) {
       sql.append(" and price <= ?");
+      countSql.append(" and price <= ?");
       params.add(maxPrice);
     }
     if (notBlank(location)) {
       sql.append(" and lower(concat(coalesce(location,''),' ',coalesce(city,''))) like ?");
+      countSql.append(" and lower(concat(coalesce(location,''),' ',coalesce(city,''))) like ?");
       params.add("%" + location.trim().toLowerCase() + "%");
     }
     if (Boolean.TRUE.equals(featured)) {
       sql.append(" and is_featured = true");
+      countSql.append(" and is_featured = true");
     }
 
+    int normalizedLimit = normalizeLimit(limit);
+    int normalizedPage = Math.max(page != null ? page : 1, 1);
+    long total = count(countSql.toString(), params);
+    int totalPages = Math.max((int) Math.ceil(total / (double) normalizedLimit), 1);
+    if (normalizedPage > totalPages) {
+      normalizedPage = totalPages;
+    }
+    int offset = (normalizedPage - 1) * normalizedLimit;
+
     sql.append(" order by is_featured desc, id desc");
-    return query(sql.toString(), params, false);
+    sql.append(" limit ? offset ?");
+
+    List<Object> pagedParams = new ArrayList<>(params);
+    pagedParams.add(normalizedLimit);
+    pagedParams.add(offset);
+
+    PublicPropertyPage result = new PublicPropertyPage();
+    result.items = query(sql.toString(), pagedParams, false);
+    result.total = total;
+    result.page = normalizedPage;
+    result.limit = normalizedLimit;
+    result.totalPages = totalPages;
+    return result;
   }
 
   public List<Property> findAdmin(String search, String status, Boolean isPublished) throws SQLException {
@@ -361,6 +404,17 @@ public class PropertyRepository {
     }
   }
 
+  private long count(String sql, List<Object> params) throws SQLException {
+    try (Connection connection = Database.getConnection();
+         PreparedStatement statement = connection.prepareStatement(sql)) {
+      bindParams(statement, params);
+      try (ResultSet rs = statement.executeQuery()) {
+        rs.next();
+        return rs.getLong(1);
+      }
+    }
+  }
+
   private Property normalizeForCreate(Property input) throws SQLException {
     Property property = input == null ? new Property() : input;
     property.title = defaultIfBlank(property.title, "Nueva propiedad");
@@ -476,6 +530,13 @@ public class PropertyRepository {
     return notBlank(value) ? value : fallback;
   }
 
+  private static int normalizeLimit(Integer limit) {
+    if (limit == null || limit <= 0) {
+      return DEFAULT_PUBLIC_PAGE_SIZE;
+    }
+    return Math.min(limit, MAX_PUBLIC_PAGE_SIZE);
+  }
+
   private static String pick(String... values) {
     for (String value : values) {
       if (value != null) {
@@ -483,5 +544,13 @@ public class PropertyRepository {
       }
     }
     return null;
+  }
+
+  public static class PublicPropertyPage {
+    public List<Property> items = new ArrayList<>();
+    public long total;
+    public int page;
+    public int limit;
+    public int totalPages;
   }
 }

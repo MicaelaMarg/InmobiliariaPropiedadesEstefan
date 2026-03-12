@@ -68,6 +68,9 @@ function slugify(text) {
 }
 
 export async function fetchPropertiesPublic(filters = {}) {
+  const page = Number(filters.page) > 0 ? Number(filters.page) : 1
+  const limit = Number(filters.limit) > 0 ? Number(filters.limit) : 12
+
   if (USE_MOCK) {
     let list = getMockList().filter(p => p.isPublished && p.status === 'available')
     if (filters.operation) list = list.filter(p => p.operation === filters.operation)
@@ -78,7 +81,17 @@ export async function fetchPropertiesPublic(filters = {}) {
       const loc = filters.location.toLowerCase()
       list = list.filter(p => (p.location + ' ' + p.city).toLowerCase().includes(loc))
     }
-    return list
+    const total = list.length
+    const totalPages = Math.max(Math.ceil(total / limit), 1)
+    const currentPage = Math.min(page, totalPages)
+    const start = (currentPage - 1) * limit
+    return {
+      items: list.slice(start, start + limit),
+      total,
+      page: currentPage,
+      limit,
+      totalPages,
+    }
   }
 
   const res = await fetch(buildUrl('/properties', filters))
@@ -87,11 +100,16 @@ export async function fetchPropertiesPublic(filters = {}) {
 }
 
 export async function fetchFeaturedProperties() {
-  if (USE_MOCK) return getMockList().filter(p => p.isPublished && p.status === 'available' && p.isFeatured)
+  if (USE_MOCK) {
+    return getMockList()
+      .filter(p => p.isPublished && p.status === 'available' && p.isFeatured)
+      .slice(0, 6)
+  }
 
-  const res = await fetch(buildUrl('/properties', { featured: 1 }))
+  const res = await fetch(buildUrl('/properties', { featured: 1, limit: 6, page: 1 }))
   if (!res.ok) throw new Error('Error al cargar destacadas')
-  return res.json()
+  const data = await res.json()
+  return Array.isArray(data?.items) ? data.items : []
 }
 
 export async function fetchPropertyBySlug(slug) {
