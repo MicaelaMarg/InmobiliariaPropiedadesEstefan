@@ -25,7 +25,14 @@ public class AdminAuthFilter implements Filter {
       return;
     }
 
-    String authorization = httpRequest.getHeader("Authorization");
+    String path = httpRequest.getRequestURI();
+
+if (path.equals("/api/admin/setup")) {
+  chain.doFilter(request, response);
+  return;
+}
+
+String authorization = httpRequest.getHeader("Authorization");
     if (authorization == null || !authorization.startsWith("Bearer ") || authorization.length() <= 7) {
       JsonUtil.writeError(httpResponse, HttpServletResponse.SC_UNAUTHORIZED, "Falta token de administrador");
       return;
