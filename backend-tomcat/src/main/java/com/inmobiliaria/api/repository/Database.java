@@ -5,6 +5,8 @@ import com.inmobiliaria.api.model.PropertyImage;
 import com.inmobiliaria.api.util.SlugUtils;
 import jakarta.servlet.ServletContext;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -29,28 +31,43 @@ public final class Database {
       return;
     }
 
-    String host = System.getenv("MYSQLHOST");
-    String port = System.getenv("MYSQLPORT");
-    String db = System.getenv("MYSQLDATABASE");
-    String user = System.getenv("MYSQLUSER");
-    String password = System.getenv("MYSQLPASSWORD");
-
-    if(db == null || db.isBlank()){
-      throw new IllegalStateException("MYSQLDATABASE no está configurado en Railway");
-    }
-
     try{
       Class.forName("com.mysql.cj.jdbc.Driver");
     }catch(ClassNotFoundException e){
       throw new IllegalStateException("No se pudo cargar el driver MySQL", e);
     }
 
-    jdbcUrl =
-      "jdbc:mysql://" + host + ":" + port + "/" + db +
-      "?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true";
+    String mysqlUrl = firstNonBlank(
+      System.getenv("MYSQL_URL"),
+      System.getenv("MYSQL_URL_INTERNAL")
+    );
 
-    dbUser = user;
-    dbPassword = password;
+    if (mysqlUrl != null) {
+      configureFromMysqlUrl(mysqlUrl);
+    } else {
+      String host = firstNonBlank(System.getenv("MYSQLHOST"), System.getenv("MYSQL_HOST"));
+      String port = firstNonBlank(System.getenv("MYSQLPORT"), System.getenv("MYSQL_PORT"), "3306");
+      String db = firstNonBlank(System.getenv("MYSQLDATABASE"), System.getenv("MYSQL_DATABASE"));
+      String user = firstNonBlank(System.getenv("MYSQLUSER"), System.getenv("MYSQL_USER"));
+      String password = firstNonBlank(System.getenv("MYSQLPASSWORD"), System.getenv("MYSQL_PASSWORD"));
+
+      if(host == null || host.isBlank()){
+        throw new IllegalStateException("MYSQLHOST/MYSQL_HOST no está configurado en Railway");
+      }
+      if(db == null || db.isBlank()){
+        throw new IllegalStateException("MYSQLDATABASE/MYSQL_DATABASE no está configurado en Railway");
+      }
+      if(user == null || user.isBlank()){
+        throw new IllegalStateException("MYSQLUSER/MYSQL_USER no está configurado en Railway");
+      }
+      if(password == null){
+        throw new IllegalStateException("MYSQLPASSWORD/MYSQL_PASSWORD no está configurado en Railway");
+      }
+
+      jdbcUrl = buildJdbcUrl(host, port, db);
+      dbUser = user;
+      dbPassword = password;
+    }
 
     System.out.println("[inmobiliaria] Conectado a MySQL: " + jdbcUrl);
 
@@ -210,5 +227,50 @@ public final class Database {
     image.isPrimary = true;
 
     return image;
+  }
+
+  private static void configureFromMysqlUrl(String mysqlUrl) {
+    try {
+      URI uri = new URI(mysqlUrl);
+      String scheme = uri.getScheme();
+      if (scheme == null || !scheme.startsWith("mysql")) {
+        throw new IllegalArgumentException("MYSQL_URL debe usar esquema mysql://");
+      }
+
+      String host = uri.getHost();
+      int port = uri.getPort() > 0 ? uri.getPort() : 3306;
+      String path = uri.getPath();
+      String db = path != null ? path.replaceFirst("^/+", "") : "";
+      String userInfo = uri.getUserInfo();
+
+      if (host == null || host.isBlank() || db.isBlank() || userInfo == null || userInfo.isBlank()) {
+        throw new IllegalArgumentException("MYSQL_URL no tiene host, base o credenciales válidas");
+      }
+
+      String[] credentials = userInfo.split(":", 2);
+      if (credentials.length != 2 || credentials[0].isBlank()) {
+        throw new IllegalArgumentException("MYSQL_URL no tiene usuario/contraseña válidos");
+      }
+
+      jdbcUrl = buildJdbcUrl(host, Integer.toString(port), db);
+      dbUser = credentials[0];
+      dbPassword = credentials[1];
+    } catch (URISyntaxException e) {
+      throw new IllegalStateException("MYSQL_URL no tiene un formato válido", e);
+    }
+  }
+
+  private static String buildJdbcUrl(String host, String port, String db) {
+    return "jdbc:mysql://" + host + ":" + port + "/" + db
+      + "?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true";
+  }
+
+  private static String firstNonBlank(String... values) {
+    for (String value : values) {
+      if (value != null && !value.isBlank()) {
+        return value;
+      }
+    }
+    return null;
   }
 }

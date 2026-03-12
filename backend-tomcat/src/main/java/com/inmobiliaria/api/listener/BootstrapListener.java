@@ -11,14 +11,17 @@ import jakarta.servlet.annotation.WebListener;
 public class BootstrapListener implements ServletContextListener {
   @Override
   public void contextInitialized(ServletContextEvent sce) {
+    jakarta.servlet.ServletContext context = sce.getServletContext();
     try {
-      Database.init(sce.getServletContext());
-      JwtUtil.initFromContext(sce.getServletContext());
-      initEmailService(sce.getServletContext());
+      Database.init(context);
     } catch (Exception e) {
       System.err.println("[inmobiliaria] Error al inicializar la base de datos: " + e.getMessage());
       e.printStackTrace(System.err);
+      throw new IllegalStateException("No se pudo inicializar la base de datos", e);
     }
+
+    JwtUtil.initFromContext(context);
+    initEmailService(context);
   }
 
   private static void initEmailService(jakarta.servlet.ServletContext context) {
