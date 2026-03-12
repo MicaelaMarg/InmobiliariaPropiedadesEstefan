@@ -75,6 +75,7 @@ public final class Database {
         Statement statement = connection.createStatement()){
 
       createTablesMysql(statement);
+      migrateMysqlSchema(statement);
     }
 
     try{
@@ -124,7 +125,7 @@ public final class Database {
       create table if not exists property_images (
         id bigint auto_increment primary key,
         property_id bigint not null,
-        url text not null,
+        url mediumtext not null,
         display_order int not null,
         is_primary boolean not null,
         foreign key (property_id) references properties(id) on delete cascade
@@ -227,6 +228,12 @@ public final class Database {
     image.isPrimary = true;
 
     return image;
+  }
+
+  private static void migrateMysqlSchema(Statement statement) throws SQLException{
+    // Asegura compatibilidad con instalaciones previas donde url podía haber quedado en VARCHAR/TEXT.
+    // El admin actual guarda imágenes como data URLs, que superan fácilmente 255 caracteres.
+    statement.execute("alter table property_images modify column url mediumtext not null");
   }
 
   private static void configureFromMysqlUrl(String mysqlUrl) {
