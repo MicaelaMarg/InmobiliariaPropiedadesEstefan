@@ -75,7 +75,7 @@ public final class Database {
         Statement statement = connection.createStatement()){
 
       createTablesMysql(statement);
-      migrateMysqlSchema(statement);
+      migrateMysqlSchema(connection, statement);
     }
 
     try{
@@ -230,10 +230,52 @@ public final class Database {
     return image;
   }
 
-  private static void migrateMysqlSchema(Statement statement) throws SQLException{
+  private static void migrateMysqlSchema(Connection connection, Statement statement) throws SQLException{
     // Asegura compatibilidad con instalaciones previas donde url podía haber quedado en VARCHAR/TEXT.
     // El admin actual guarda imágenes como data URLs, que superan fácilmente 255 caracteres.
     statement.execute("alter table property_images modify column url mediumtext not null");
+    ensureIndexExists(
+      connection,
+      "properties",
+      "idx_properties_public_listing",
+      "create index idx_properties_public_listing on properties (is_published, status, is_featured, id)"
+    );
+    ensureIndexExists(
+      connection,
+      "properties",
+      "idx_properties_operation_type",
+      "create index idx_properties_operation_type on properties (operation, type)"
+    );
+    ensureIndexExists(
+      connection,
+      "property_images",
+      "idx_property_images_property_order",
+      "create index idx_property_images_property_order on property_images (property_id, is_primary, display_order)"
+    );
+  }
+
+  private static void ensureIndexExists(Connection connection, String tableName, String indexName, String createSql)
+    throws SQLException {
+    try (PreparedStatement statement = connection.prepareStatement("""
+      select count(*)
+        from information_schema.statistics
+       where table_schema = database()
+         and table_name = ?
+         and index_name = ?
+      """)) {
+      statement.setString(1, tableName);
+      statement.setString(2, indexName);
+      try (ResultSet rs = statement.executeQuery()) {
+        rs.next();
+        if (rs.getInt(1) > 0) {
+          return;
+        }
+      }
+    }
+
+    try (Statement statement = connection.createStatement()) {
+      statement.execute(createSql);
+    }
   }
 
   private static void configureFromMysqlUrl(String mysqlUrl) {
