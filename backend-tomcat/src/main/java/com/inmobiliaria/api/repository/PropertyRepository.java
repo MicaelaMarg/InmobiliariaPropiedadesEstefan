@@ -13,7 +13,10 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class PropertyRepository {
   private static final Type FEATURES_TYPE = new TypeToken<List<String>>() { }.getType();
@@ -56,7 +59,7 @@ public class PropertyRepository {
     }
 
     sql.append(" order by is_featured desc, id desc");
-    return query(sql.toString(), params);
+    return query(sql.toString(), params, false);
   }
 
   public List<Property> findAdmin(String search, String status, Boolean isPublished) throws SQLException {
@@ -86,18 +89,19 @@ public class PropertyRepository {
     }
 
     sql.append(" order by id desc");
-    return query(sql.toString(), params);
+    return query(sql.toString(), params, false);
   }
 
   public Property findById(long id) throws SQLException {
-    List<Property> properties = query(BASE_SELECT + " where id = ?", List.of(id));
+    List<Property> properties = query(BASE_SELECT + " where id = ?", List.of(id), true);
     return properties.isEmpty() ? null : properties.get(0);
   }
 
   public Property findBySlugPublic(String slug) throws SQLException {
     List<Property> properties = query(
       BASE_SELECT + " where slug = ? and is_published = true and status = 'available'",
-      List.of(slug)
+      List.of(slug),
+      true
     );
     return properties.isEmpty() ? null : properties.get(0);
   }
@@ -166,7 +170,7 @@ public class PropertyRepository {
     }
   }
 
-  private List<Property> query(String sql, List<Object> params) throws SQLException {
+  private List<Property> query(String sql, List<Object> params, boolean includeAllImages) throws SQLException {
     try (Connection connection = Database.getConnection();
          PreparedStatement statement = connection.prepareStatement(sql)) {
       bindParams(statement, params);
@@ -174,9 +178,9 @@ public class PropertyRepository {
         List<Property> result = new ArrayList<>();
         while (rs.next()) {
           Property property = mapProperty(rs);
-          property.images = findImages(connection, Long.parseLong(property.id));
           result.add(property);
         }
+        attachImages(connection, result, includeAllImages);
         return result;
       }
     }
@@ -234,6 +238,59 @@ public class PropertyRepository {
           images.add(image);
         }
         return images;
+      }
+    }
+  }
+
+  private void attachImages(Connection connection, List<Property> properties, boolean includeAllImages) throws SQLException {
+    if (properties == null || properties.isEmpty()) {
+      return;
+    }
+
+    if (includeAllImages) {
+      for (Property property : properties) {
+        property.images = findImages(connection, Long.parseLong(property.id));
+      }
+      return;
+    }
+
+    attachPrimaryImages(connection, properties);
+  }
+
+  private void attachPrimaryImages(Connection connection, List<Property> properties) throws SQLException {
+    String placeholders = String.join(", ", Collections.nCopies(properties.size(), "?"));
+    Map<Long, Property> propertiesById = new HashMap<>();
+    for (Property property : properties) {
+      property.images = new ArrayList<>();
+      propertiesById.put(Long.parseLong(property.id), property);
+    }
+
+    String sql = """
+      select property_id, url, display_order, is_primary
+        from property_images
+       where property_id in (%s)
+       order by property_id asc, is_primary desc, display_order asc, id asc
+      """.formatted(placeholders);
+
+    try (PreparedStatement statement = connection.prepareStatement(sql)) {
+      for (int i = 0; i < properties.size(); i++) {
+        statement.setLong(i + 1, Long.parseLong(properties.get(i).id));
+      }
+
+      try (ResultSet rs = statement.executeQuery()) {
+        while (rs.next()) {
+          long propertyId = rs.getLong("property_id");
+          Property property = propertiesById.get(propertyId);
+          if (property == null || !property.images.isEmpty()) {
+            continue;
+          }
+
+          PropertyImage image = new PropertyImage();
+          image.url = rs.getString("url");
+          image.order = getNullableInt(rs, "display_order");
+          image.isPrimary = rs.getBoolean("is_primary");
+          property.images.add(image);
+        }
       }
     }
   }
