@@ -95,11 +95,14 @@ onMounted(async () => {
   try {
     property.value = await fetchPropertyBySlug(route.params.slug)
     if (property.value) {
-      const list = await fetchPropertiesPublic({
+      const result = await fetchPropertiesPublic({
         operation: property.value.operation,
         type: property.value.type,
+        page: 1,
+        limit: 6,
       })
-      similar.value = list.filter(p => p.id !== property.value.id).slice(0, 3)
+      const items = result.items || []
+      similar.value = items.filter(p => p.id !== property.value.id).slice(0, 3)
     }
   } catch {
     property.value = null
