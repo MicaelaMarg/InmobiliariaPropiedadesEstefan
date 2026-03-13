@@ -330,6 +330,9 @@ public class PropertyRepository {
 
           PropertyImage image = new PropertyImage();
           image.url = rs.getString("url");
+          if (isInlineImage(image.url)) {
+            continue;
+          }
           image.order = getNullableInt(rs, "display_order");
           image.isPrimary = rs.getBoolean("is_primary");
           property.images.add(image);
@@ -524,6 +527,10 @@ public class PropertyRepository {
 
   private static boolean notBlank(String value) {
     return value != null && !value.isBlank();
+  }
+
+  private static boolean isInlineImage(String value) {
+    return value != null && value.startsWith("data:image/");
   }
 
   private static String defaultIfBlank(String value, String fallback) {
