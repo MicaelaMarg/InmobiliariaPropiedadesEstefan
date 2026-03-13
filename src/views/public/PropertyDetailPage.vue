@@ -14,6 +14,7 @@ const app = useAppStore()
 const property = ref(null)
 const similar = ref([])
 const loading = ref(true)
+const loadingSimilar = ref(false)
 
 const typeLabel = computed(() => {
   if (!property.value) return ''
@@ -94,7 +95,15 @@ const propertyStats = computed(() => {
 onMounted(async () => {
   try {
     property.value = await fetchPropertyBySlug(route.params.slug)
-    if (property.value) {
+  } catch {
+    property.value = null
+  } finally {
+    loading.value = false
+  }
+
+  if (property.value) {
+    loadingSimilar.value = true
+    try {
       const result = await fetchPropertiesPublic({
         operation: property.value.operation,
         type: property.value.type,
@@ -103,11 +112,11 @@ onMounted(async () => {
       })
       const items = result.items || []
       similar.value = items.filter(p => p.id !== property.value.id).slice(0, 3)
+    } catch {
+      similar.value = []
+    } finally {
+      loadingSimilar.value = false
     }
-  } catch {
-    property.value = null
-  } finally {
-    loading.value = false
   }
 })
 </script>
@@ -180,7 +189,10 @@ onMounted(async () => {
         </a>
       </div>
 
-      <div v-if="similar.length">
+      <div v-if="loadingSimilar" class="mt-8">
+        <LoadingSpinner />
+      </div>
+      <div v-else-if="similar.length">
         <h2 class="text-xl font-bold text-gray-900 mb-4">Propiedades similares</h2>
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <PropertyCard v-for="p in similar" :key="p.id" :property="p" />
