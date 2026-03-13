@@ -84,12 +84,11 @@ function goContact() {
     <!-- Hero -->
     <section class="relative bg-gradient-to-br from-primary-600 to-primary-800 text-white overflow-hidden">
       <div class="absolute inset-0 opacity-20">
-       <img
-  src="/images/banner-home.webp"
-  alt="Erika M Estefan Propiedades"
-  class="w-full h-full object-contain"
-  loading="lazy"
-/>
+        <img
+          src="https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=1920"
+          alt=""
+          class="w-full h-full object-cover"
+        />
       </div>
       <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-28">
         <div class="max-w-2xl">
