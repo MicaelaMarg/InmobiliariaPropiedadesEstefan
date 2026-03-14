@@ -46,6 +46,15 @@ export const PAYMENT_OPTION_OPTIONS = [
   { value: 'menor_valor', label: 'Menor valor' },
 ]
 
+export const SERVICE_OPTIONS = [
+  { value: 'agua', label: 'Agua' },
+  { value: 'cloaca', label: 'Cloaca' },
+  { value: 'gas', label: 'Gas' },
+  { value: 'electricidad', label: 'Electricidad' },
+  { value: 'internet', label: 'Internet' },
+  { value: 'pavimento', label: 'Pavimento' },
+]
+
 const mockProperties = [
   {
     id: '1',
@@ -74,6 +83,7 @@ const mockProperties = [
     isFeatured: true,
     highlightedMessages: ['urgente'],
     paymentOptions: ['contado'],
+    services: ['agua', 'cloaca', 'gas', 'electricidad', 'internet'],
     images: [
       { url: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800', order: 0, isPrimary: true },
       { url: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800', order: 1, isPrimary: false },
@@ -112,6 +122,7 @@ const mockProperties = [
     isFeatured: true,
     highlightedMessages: [],
     paymentOptions: [],
+    services: ['agua', 'cloaca', 'gas', 'electricidad', 'internet'],
     images: [
       { url: 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=800', order: 0, isPrimary: true },
     ],
@@ -149,6 +160,7 @@ const mockProperties = [
     isFeatured: false,
     highlightedMessages: [],
     paymentOptions: [],
+    services: ['agua', 'electricidad'],
     images: [
       { url: 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=800', order: 0, isPrimary: true },
     ],
@@ -186,6 +198,7 @@ const mockProperties = [
     isFeatured: true,
     highlightedMessages: ['oportunidad'],
     paymentOptions: ['contado', 'acepta_permuta'],
+    services: ['agua', 'cloaca', 'gas', 'electricidad'],
     images: [
       { url: 'https://images.unsplash.com/photo-1604719314656-5d1d2f864687?w=800', order: 0, isPrimary: true },
     ],
@@ -223,6 +236,7 @@ const mockProperties = [
     isFeatured: false,
     highlightedMessages: [],
     paymentOptions: ['financiado'],
+    services: ['agua', 'gas', 'electricidad'],
     images: [],
     contactPhone: '+54 11 1234-5678',
     contactEmail: 'contacto@inmobiliaria.com',

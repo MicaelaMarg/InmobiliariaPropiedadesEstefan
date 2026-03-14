@@ -7,6 +7,7 @@ import {
   CURRENCIES,
   HIGHLIGHTED_MESSAGE_OPTIONS,
   PAYMENT_OPTION_OPTIONS,
+  SERVICE_OPTIONS,
 } from '../../data/mockProperties'
 
 const props = defineProps({
@@ -41,6 +42,7 @@ function createDefaultForm() {
   isFeatured: false,
   highlightedMessages: [],
   paymentOptions: [],
+  services: [],
   contactPhone: '',
   contactEmail: '',
   observations: '',
@@ -59,12 +61,14 @@ function normalizeForm(value = {}) {
   const nextFeatures = Array.isArray(value.features) ? value.features : []
   const nextHighlightedMessages = Array.isArray(value.highlightedMessages) ? value.highlightedMessages : []
   const nextPaymentOptions = Array.isArray(value.paymentOptions) ? value.paymentOptions : []
+  const nextServices = Array.isArray(value.services) ? value.services : []
   return {
     ...createDefaultForm(),
     ...value,
     features: nextFeatures,
     highlightedMessages: nextHighlightedMessages,
     paymentOptions: nextPaymentOptions,
+    services: nextServices,
   }
 }
 
@@ -199,6 +203,25 @@ watch(featuresText, (t) => {
               <span>{{ item.label }}</span>
             </label>
           </div>
+        </div>
+      </div>
+
+      <div class="mt-6 pt-6 border-t border-gray-100">
+        <h4 class="text-sm font-medium text-gray-700 mb-3">Servicios</h4>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          <label
+            v-for="item in SERVICE_OPTIONS"
+            :key="item.value"
+            class="flex items-center gap-3 text-sm text-gray-700"
+          >
+            <input
+              v-model="form.services"
+              :value="item.value"
+              type="checkbox"
+              class="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+            />
+            <span>{{ item.label }}</span>
+          </label>
         </div>
       </div>
     </section>

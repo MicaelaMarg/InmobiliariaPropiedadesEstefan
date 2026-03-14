@@ -8,7 +8,7 @@ import ContactCard from '../../components/contact/ContactCard.vue'
 import PropertyCard from '../../components/property/PropertyCard.vue'
 import LoadingSpinner from '../../components/ui/LoadingSpinner.vue'
 import { fetchPropertyBySlug, fetchPropertiesPublic } from '../../services/properties'
-import { HIGHLIGHTED_MESSAGE_OPTIONS, PAYMENT_OPTION_OPTIONS } from '../../data/mockProperties'
+import { HIGHLIGHTED_MESSAGE_OPTIONS, PAYMENT_OPTION_OPTIONS, SERVICE_OPTIONS } from '../../data/mockProperties'
 
 const route = useRoute()
 const app = useAppStore()
@@ -137,6 +137,11 @@ const paymentOptionLabels = computed(() => {
   return (property.value?.paymentOptions || []).map(value => map.get(value) || value)
 })
 
+const serviceLabels = computed(() => {
+  const map = new Map(SERVICE_OPTIONS.map(item => [item.value, item.label]))
+  return (property.value?.services || []).map(value => map.get(value) || value)
+})
+
 onMounted(async () => {
   try {
     property.value = await fetchPropertyBySlug(route.params.slug)
@@ -245,6 +250,19 @@ onMounted(async () => {
             </li>
           </ul>
         </div>
+      </div>
+
+      <div v-if="serviceLabels.length" class="mb-8 rounded-2xl bg-gray-50 p-5">
+        <h2 class="text-lg font-semibold text-gray-900 mb-3">Servicios</h2>
+        <ul class="flex flex-wrap gap-2">
+          <li
+            v-for="item in serviceLabels"
+            :key="item"
+            class="px-3 py-1.5 rounded-xl bg-amber-100 text-amber-900 text-sm font-medium"
+          >
+            {{ item }}
+          </li>
+        </ul>
       </div>
 
       <div v-if="youtubeEmbedUrl" class="mb-8">

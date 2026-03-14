@@ -30,6 +30,7 @@ public class Property {
   public Boolean isFeatured;
   public List<String> highlightedMessages = new ArrayList<>();
   public List<String> paymentOptions = new ArrayList<>();
+  public List<String> services = new ArrayList<>();
   public List<PropertyImage> images = new ArrayList<>();
   public String contactPhone;
   public String contactEmail;

@@ -115,6 +115,7 @@ public final class Database {
         is_featured boolean,
         highlighted_messages text,
         payment_options text,
+        services text,
         contact_phone varchar(120),
         contact_email varchar(255),
         observations text,
@@ -272,6 +273,12 @@ public final class Database {
       "properties",
       "payment_options",
       "alter table properties add column payment_options text"
+    );
+    ensureColumnExists(
+      connection,
+      "properties",
+      "services",
+      "alter table properties add column services text"
     );
   }
 
