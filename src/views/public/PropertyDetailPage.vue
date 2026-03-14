@@ -50,8 +50,9 @@ function getYouTubeEmbedUrl(value) {
 const typeLabel = computed(() => {
   if (!property.value) return ''
   const types = {
-    casa: 'Casa', departamento: 'Departamento', lote: 'Lote', local: 'Local',
-    fondo_comercio: 'Fondo de comercio', kiosco: 'Kiosco', galpon: 'Galpón',
+    casa: 'Casa', departamento: 'Departamento', duplex: 'Dúplex', ph: 'PH',
+    lote: 'Lote', campo: 'Campo', local: 'Local',
+    fondo_comercio: 'Fondo de comercio', kiosco: 'Kiosko', kiosko: 'Kiosko', galpon: 'Galpón',
     terreno: 'Terreno', oficina: 'Oficina', otro: 'Otro',
   }
   return types[property.value.type] || property.value.type

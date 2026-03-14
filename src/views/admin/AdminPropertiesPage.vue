@@ -79,7 +79,22 @@ async function remove(prop) {
 }
 
 const typeLabel = (type) => {
-  const map = { casa: 'Casa', departamento: 'Dpto', lote: 'Lote', local: 'Local', fondo_comercio: 'F. comercio', kiosco: 'Kiosco', galpon: 'Galpón', terreno: 'Terreno', oficina: 'Oficina', otro: 'Otro' }
+  const map = {
+    casa: 'Casa',
+    departamento: 'Dpto',
+    duplex: 'Dúplex',
+    ph: 'PH',
+    lote: 'Lote',
+    campo: 'Campo',
+    local: 'Local',
+    fondo_comercio: 'F. comercio',
+    kiosco: 'Kiosko',
+    kiosko: 'Kiosko',
+    galpon: 'Galpón',
+    terreno: 'Terreno',
+    oficina: 'Oficina',
+    otro: 'Otro',
+  }
   return map[type] || type
 }
 </script>
