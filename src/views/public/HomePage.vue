@@ -9,6 +9,15 @@ const router = useRouter()
 const featured = ref([])
 const loading = ref(true)
 const googleReviewsUrl = 'https://maps.app.goo.gl/j8Vnf6GnBffEAH9g6'
+const heroImageConfig = {
+  src: '/images/imagen-hero.png',
+  fallbackSrc: 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=1920',
+  alt: 'Imagen principal de Erika M. Estefan Propiedades',
+  fitClass: 'object-contain',
+  position: 'center center',
+  heightClass: 'min-h-[430px] md:min-h-[560px]',
+}
+const heroImageSrc = ref(heroImageConfig.src)
 
 const testimonials = [
   {
@@ -77,20 +86,34 @@ function goCatalog() {
 function goContact() {
   router.push({ name: 'Contact' })
 }
+
+function handleHeroImageError() {
+  if (heroImageSrc.value !== heroImageConfig.fallbackSrc) {
+    heroImageSrc.value = heroImageConfig.fallbackSrc
+  }
+}
 </script>
 
 <template>
   <div>
     <!-- Hero -->
-    <section class="relative bg-gradient-to-br from-primary-600 to-primary-800 text-white overflow-hidden">
-      <div class="absolute inset-0 opacity-20">
+    <section
+      class="relative bg-gradient-to-br from-primary-600 to-primary-800 text-white overflow-hidden"
+      :class="heroImageConfig.heightClass"
+    >
+      <div class="absolute inset-0 bg-primary-950/40 z-10" />
+      <div class="absolute inset-0 opacity-100">
         <img
-          src="https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=1920"
-          alt=""
-          class="w-full h-full object-cover"
+          :src="heroImageSrc"
+          :alt="heroImageConfig.alt"
+          class="w-full h-full"
+          :class="heroImageConfig.fitClass"
+          :style="{ objectPosition: heroImageConfig.position }"
+          loading="eager"
+          @error="handleHeroImageError"
         />
       </div>
-      <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-28">
+      <div class="relative z-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-28">
         <div class="max-w-2xl">
           <h1 class="text-4xl md:text-5xl font-bold leading-tight mb-4">
             Encontrá tu próximo hogar o inversión
