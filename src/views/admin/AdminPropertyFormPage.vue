@@ -17,6 +17,27 @@ const error = ref('')
 const formData = ref({})
 const images = ref([])
 
+function toNullableNumber(value) {
+  if (value === '' || value === null || value === undefined) {
+    return null
+  }
+
+  const numeric = Number(value)
+  return Number.isFinite(numeric) ? numeric : null
+}
+
+function sanitizePayload(value = {}) {
+  return {
+    ...value,
+    price: toNullableNumber(value.price),
+    totalArea: toNullableNumber(value.totalArea),
+    coveredArea: toNullableNumber(value.coveredArea),
+    bedrooms: toNullableNumber(value.bedrooms),
+    bathrooms: toNullableNumber(value.bathrooms),
+    rooms: toNullableNumber(value.rooms),
+  }
+}
+
 onMounted(async () => {
   if (isEdit.value) {
     try {
@@ -48,7 +69,7 @@ async function save() {
   saving.value = true
   try {
     const payload = {
-      ...formData.value,
+      ...sanitizePayload(formData.value),
       slug: formData.value.slug || slugify(formData.value.title),
       images: images.value.map((img, i) => ({
         url: img.url || '',
