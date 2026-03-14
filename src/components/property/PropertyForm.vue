@@ -1,6 +1,13 @@
 <script setup>
 import { ref, watch } from 'vue'
-import { PROPERTY_TYPES, OPERATIONS, STATUSES, CURRENCIES } from '../../data/mockProperties'
+import {
+  PROPERTY_TYPES,
+  OPERATIONS,
+  STATUSES,
+  CURRENCIES,
+  HIGHLIGHTED_MESSAGE_OPTIONS,
+  PAYMENT_OPTION_OPTIONS,
+} from '../../data/mockProperties'
 
 const props = defineProps({
   modelValue: { type: Object, default: () => ({}) },
@@ -32,6 +39,8 @@ function createDefaultForm() {
   status: 'available',
   isPublished: true,
   isFeatured: false,
+  highlightedMessages: [],
+  paymentOptions: [],
   contactPhone: '',
   contactEmail: '',
   observations: '',
@@ -48,10 +57,14 @@ function arraysEqual(a = [], b = []) {
 
 function normalizeForm(value = {}) {
   const nextFeatures = Array.isArray(value.features) ? value.features : []
+  const nextHighlightedMessages = Array.isArray(value.highlightedMessages) ? value.highlightedMessages : []
+  const nextPaymentOptions = Array.isArray(value.paymentOptions) ? value.paymentOptions : []
   return {
     ...createDefaultForm(),
     ...value,
     features: nextFeatures,
+    highlightedMessages: nextHighlightedMessages,
+    paymentOptions: nextPaymentOptions,
   }
 }
 
@@ -146,6 +159,46 @@ watch(featuresText, (t) => {
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">Código referencia</label>
           <input v-model="form.referenceCode" type="text" class="w-full rounded-xl border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-primary-500" />
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mt-6 pt-6 border-t border-gray-100">
+        <div>
+          <h4 class="text-sm font-medium text-gray-700 mb-3">Mensajes destacados</h4>
+          <div class="space-y-3">
+            <label
+              v-for="item in HIGHLIGHTED_MESSAGE_OPTIONS"
+              :key="item.value"
+              class="flex items-center gap-3 text-sm text-gray-700"
+            >
+              <input
+                v-model="form.highlightedMessages"
+                :value="item.value"
+                type="checkbox"
+                class="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+              />
+              <span>{{ item.label }}</span>
+            </label>
+          </div>
+        </div>
+
+        <div>
+          <h4 class="text-sm font-medium text-gray-700 mb-3">Formas de pago</h4>
+          <div class="space-y-3">
+            <label
+              v-for="item in PAYMENT_OPTION_OPTIONS"
+              :key="item.value"
+              class="flex items-center gap-3 text-sm text-gray-700"
+            >
+              <input
+                v-model="form.paymentOptions"
+                :value="item.value"
+                type="checkbox"
+                class="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+              />
+              <span>{{ item.label }}</span>
+            </label>
+          </div>
         </div>
       </div>
     </section>

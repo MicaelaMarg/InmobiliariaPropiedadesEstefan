@@ -113,6 +113,8 @@ public final class Database {
         status varchar(80),
         is_published boolean,
         is_featured boolean,
+        highlighted_messages text,
+        payment_options text,
         contact_phone varchar(120),
         contact_email varchar(255),
         observations text,
@@ -258,6 +260,18 @@ public final class Database {
       "properties",
       "youtube_url",
       "alter table properties add column youtube_url varchar(500)"
+    );
+    ensureColumnExists(
+      connection,
+      "properties",
+      "highlighted_messages",
+      "alter table properties add column highlighted_messages text"
+    );
+    ensureColumnExists(
+      connection,
+      "properties",
+      "payment_options",
+      "alter table properties add column payment_options text"
     );
   }
 

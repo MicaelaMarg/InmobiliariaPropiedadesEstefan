@@ -28,6 +28,8 @@ public class Property {
   public String status;
   public Boolean isPublished;
   public Boolean isFeatured;
+  public List<String> highlightedMessages = new ArrayList<>();
+  public List<String> paymentOptions = new ArrayList<>();
   public List<PropertyImage> images = new ArrayList<>();
   public String contactPhone;
   public String contactEmail;

@@ -32,6 +32,20 @@ export const CURRENCIES = [
   { value: 'USD', label: 'USD' },
 ]
 
+export const HIGHLIGHTED_MESSAGE_OPTIONS = [
+  { value: 'urgente', label: 'Urgente' },
+  { value: 'oportunidad', label: 'Oportunidad' },
+  { value: 'apto_credito', label: 'Apto crédito' },
+  { value: 'retasado', label: 'Retasado' },
+]
+
+export const PAYMENT_OPTION_OPTIONS = [
+  { value: 'contado', label: 'Contado' },
+  { value: 'financiado', label: 'Financiado' },
+  { value: 'acepta_permuta', label: 'Acepta permuta' },
+  { value: 'menor_valor', label: 'Menor valor' },
+]
+
 const mockProperties = [
   {
     id: '1',
@@ -58,6 +72,8 @@ const mockProperties = [
     status: 'available',
     isPublished: true,
     isFeatured: true,
+    highlightedMessages: ['urgente'],
+    paymentOptions: ['contado'],
     images: [
       { url: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800', order: 0, isPrimary: true },
       { url: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800', order: 1, isPrimary: false },
@@ -94,6 +110,8 @@ const mockProperties = [
     status: 'available',
     isPublished: true,
     isFeatured: true,
+    highlightedMessages: [],
+    paymentOptions: [],
     images: [
       { url: 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=800', order: 0, isPrimary: true },
     ],
@@ -129,6 +147,8 @@ const mockProperties = [
     status: 'available',
     isPublished: true,
     isFeatured: false,
+    highlightedMessages: [],
+    paymentOptions: [],
     images: [
       { url: 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=800', order: 0, isPrimary: true },
     ],
@@ -164,6 +184,8 @@ const mockProperties = [
     status: 'available',
     isPublished: true,
     isFeatured: true,
+    highlightedMessages: ['oportunidad'],
+    paymentOptions: ['contado', 'acepta_permuta'],
     images: [
       { url: 'https://images.unsplash.com/photo-1604719314656-5d1d2f864687?w=800', order: 0, isPrimary: true },
     ],
@@ -199,6 +221,8 @@ const mockProperties = [
     status: 'available',
     isPublished: true,
     isFeatured: false,
+    highlightedMessages: [],
+    paymentOptions: ['financiado'],
     images: [],
     contactPhone: '+54 11 1234-5678',
     contactEmail: 'contacto@inmobiliaria.com',

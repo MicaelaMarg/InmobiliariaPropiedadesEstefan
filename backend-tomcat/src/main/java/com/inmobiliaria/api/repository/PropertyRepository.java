@@ -20,12 +20,14 @@ import java.util.Map;
 
 public class PropertyRepository {
   private static final Type FEATURES_TYPE = new TypeToken<List<String>>() { }.getType();
+  private static final Type STRING_LIST_TYPE = new TypeToken<List<String>>() { }.getType();
   private static final int DEFAULT_PUBLIC_PAGE_SIZE = 12;
   private static final int MAX_PUBLIC_PAGE_SIZE = 48;
   private static final String BASE_SELECT = """
     select id, slug, title, type, category, operation, price, currency, location, address, city, area,
            total_area, covered_area, bedrooms, bathrooms, rooms, state, description, features,
-           reference_code, status, is_published, is_featured, contact_phone, contact_email,
+           reference_code, status, is_published, is_featured, highlighted_messages, payment_options,
+           contact_phone, contact_email,
            observations, youtube_url, created_at, updated_at
     from properties
     """;
@@ -157,9 +159,10 @@ public class PropertyRepository {
            insert into properties (
              slug, title, type, category, operation, price, currency, location, address, city, area,
              total_area, covered_area, bedrooms, bathrooms, rooms, state, description, features,
-             reference_code, status, is_published, is_featured, contact_phone, contact_email,
+             reference_code, status, is_published, is_featured, highlighted_messages, payment_options,
+             contact_phone, contact_email,
              observations, youtube_url, created_at, updated_at
-           ) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+           ) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
            """, Statement.RETURN_GENERATED_KEYS)) {
       bindProperty(statement, property);
       statement.executeUpdate();
@@ -192,12 +195,13 @@ public class PropertyRepository {
               set slug = ?, title = ?, type = ?, category = ?, operation = ?, price = ?, currency = ?,
                   location = ?, address = ?, city = ?, area = ?, total_area = ?, covered_area = ?,
               bedrooms = ?, bathrooms = ?, rooms = ?, state = ?, description = ?, features = ?,
-              reference_code = ?, status = ?, is_published = ?, is_featured = ?, contact_phone = ?,
-              contact_email = ?, observations = ?, youtube_url = ?, created_at = ?, updated_at = ?
+              reference_code = ?, status = ?, is_published = ?, is_featured = ?, highlighted_messages = ?,
+              payment_options = ?, contact_phone = ?, contact_email = ?, observations = ?, youtube_url = ?,
+              created_at = ?, updated_at = ?
             where id = ?
            """)) {
       bindProperty(statement, merged);
-      statement.setLong(30, id);
+      statement.setLong(32, id);
       statement.executeUpdate();
 
       saveImages(connection, id, merged.images);
@@ -255,6 +259,8 @@ public class PropertyRepository {
     property.status = rs.getString("status");
     property.isPublished = rs.getBoolean("is_published");
     property.isFeatured = rs.getBoolean("is_featured");
+    property.highlightedMessages = parseStringList(rs.getString("highlighted_messages"));
+    property.paymentOptions = parseStringList(rs.getString("payment_options"));
     property.contactPhone = rs.getString("contact_phone");
     property.contactEmail = rs.getString("contact_email");
     property.observations = rs.getString("observations");
@@ -395,12 +401,14 @@ public class PropertyRepository {
     statement.setString(21, property.status);
     statement.setBoolean(22, Boolean.TRUE.equals(property.isPublished));
     statement.setBoolean(23, Boolean.TRUE.equals(property.isFeatured));
-    statement.setString(24, property.contactPhone);
-    statement.setString(25, property.contactEmail);
-    statement.setString(26, property.observations);
-    statement.setString(27, property.youtubeUrl);
-    statement.setString(28, property.createdAt);
-    statement.setString(29, property.updatedAt);
+    statement.setString(24, JsonUtil.gson().toJson(property.highlightedMessages));
+    statement.setString(25, JsonUtil.gson().toJson(property.paymentOptions));
+    statement.setString(26, property.contactPhone);
+    statement.setString(27, property.contactEmail);
+    statement.setString(28, property.observations);
+    statement.setString(29, property.youtubeUrl);
+    statement.setString(30, property.createdAt);
+    statement.setString(31, property.updatedAt);
   }
 
   private void bindParams(PreparedStatement statement, List<Object> params) throws SQLException {
@@ -431,6 +439,8 @@ public class PropertyRepository {
     property.isPublished = property.isPublished != null ? property.isPublished : Boolean.TRUE;
     property.isFeatured = property.isFeatured != null ? property.isFeatured : Boolean.FALSE;
     property.features = property.features != null ? property.features : new ArrayList<>();
+    property.highlightedMessages = property.highlightedMessages != null ? property.highlightedMessages : new ArrayList<>();
+    property.paymentOptions = property.paymentOptions != null ? property.paymentOptions : new ArrayList<>();
     property.images = property.images != null ? property.images : new ArrayList<>();
     property.youtubeUrl = notBlank(property.youtubeUrl) ? property.youtubeUrl.trim() : null;
 
@@ -470,6 +480,8 @@ public class PropertyRepository {
     merged.status = pick(changes.status, existing.status);
     merged.isPublished = changes.isPublished != null ? changes.isPublished : existing.isPublished;
     merged.isFeatured = changes.isFeatured != null ? changes.isFeatured : existing.isFeatured;
+    merged.highlightedMessages = changes.highlightedMessages != null ? changes.highlightedMessages : existing.highlightedMessages;
+    merged.paymentOptions = changes.paymentOptions != null ? changes.paymentOptions : existing.paymentOptions;
     merged.images = changes.images != null ? changes.images : existing.images;
     merged.contactPhone = pick(changes.contactPhone, existing.contactPhone);
     merged.contactEmail = pick(changes.contactEmail, existing.contactEmail);
@@ -516,6 +528,15 @@ public class PropertyRepository {
     }
 
     List<String> parsed = JsonUtil.gson().fromJson(json, FEATURES_TYPE);
+    return parsed != null ? parsed : new ArrayList<>();
+  }
+
+  private List<String> parseStringList(String json) {
+    if (!notBlank(json)) {
+      return new ArrayList<>();
+    }
+
+    List<String> parsed = JsonUtil.gson().fromJson(json, STRING_LIST_TYPE);
     return parsed != null ? parsed : new ArrayList<>();
   }
 

@@ -8,6 +8,7 @@ import ContactCard from '../../components/contact/ContactCard.vue'
 import PropertyCard from '../../components/property/PropertyCard.vue'
 import LoadingSpinner from '../../components/ui/LoadingSpinner.vue'
 import { fetchPropertyBySlug, fetchPropertiesPublic } from '../../services/properties'
+import { HIGHLIGHTED_MESSAGE_OPTIONS, PAYMENT_OPTION_OPTIONS } from '../../data/mockProperties'
 
 const route = useRoute()
 const app = useAppStore()
@@ -126,6 +127,16 @@ const propertyStats = computed(() => {
 
 const youtubeEmbedUrl = computed(() => getYouTubeEmbedUrl(property.value?.youtubeUrl))
 
+const highlightedMessageLabels = computed(() => {
+  const map = new Map(HIGHLIGHTED_MESSAGE_OPTIONS.map(item => [item.value, item.label]))
+  return (property.value?.highlightedMessages || []).map(value => map.get(value) || value)
+})
+
+const paymentOptionLabels = computed(() => {
+  const map = new Map(PAYMENT_OPTION_OPTIONS.map(item => [item.value, item.label]))
+  return (property.value?.paymentOptions || []).map(value => map.get(value) || value)
+})
+
 onMounted(async () => {
   try {
     property.value = await fetchPropertyBySlug(route.params.slug)
@@ -206,6 +217,34 @@ onMounted(async () => {
             {{ f }}
           </li>
         </ul>
+      </div>
+
+      <div v-if="highlightedMessageLabels.length || paymentOptionLabels.length" class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+        <div v-if="highlightedMessageLabels.length" class="rounded-2xl bg-gray-50 p-5">
+          <h2 class="text-lg font-semibold text-gray-900 mb-3">Mensajes destacados</h2>
+          <ul class="flex flex-wrap gap-2">
+            <li
+              v-for="item in highlightedMessageLabels"
+              :key="item"
+              class="px-3 py-1.5 rounded-xl bg-sky-100 text-sky-900 text-sm font-medium"
+            >
+              {{ item }}
+            </li>
+          </ul>
+        </div>
+
+        <div v-if="paymentOptionLabels.length" class="rounded-2xl bg-gray-50 p-5">
+          <h2 class="text-lg font-semibold text-gray-900 mb-3">Formas de pago</h2>
+          <ul class="flex flex-wrap gap-2">
+            <li
+              v-for="item in paymentOptionLabels"
+              :key="item"
+              class="px-3 py-1.5 rounded-xl bg-emerald-100 text-emerald-900 text-sm font-medium"
+            >
+              {{ item }}
+            </li>
+          </ul>
+        </div>
       </div>
 
       <div v-if="youtubeEmbedUrl" class="mb-8">
