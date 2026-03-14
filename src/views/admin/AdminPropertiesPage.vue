@@ -12,13 +12,31 @@ const list = ref([])
 const loading = ref(true)
 const search = ref('')
 const filterStatus = ref('')
-const successMessage = ref('')
+const toastMessage = ref('')
+let toastTimer = null
+
+function showToast(message) {
+  toastMessage.value = message
+  if (toastTimer) {
+    clearTimeout(toastTimer)
+  }
+  toastTimer = setTimeout(() => {
+    toastMessage.value = ''
+    toastTimer = null
+  }, 3500)
+}
 
 onMounted(() => {
-  if (route.query.saved === '1') {
-    successMessage.value = 'Propiedad guardada con éxito.'
+  const saved = route.query.saved
+  if (saved === 'published') {
+    showToast('Propiedad publicada correctamente.')
     router.replace({ path: route.path, query: {} })
-    setTimeout(() => { successMessage.value = '' }, 4000)
+  } else if (saved === 'created') {
+    showToast('Propiedad guardada correctamente.')
+    router.replace({ path: route.path, query: {} })
+  } else if (saved === 'updated') {
+    showToast('Propiedad actualizada correctamente.')
+    router.replace({ path: route.path, query: {} })
   }
   load()
 })
@@ -101,9 +119,18 @@ const typeLabel = (type) => {
 
 <template>
   <div>
-    <div v-if="successMessage" class="mb-4 rounded-xl bg-green-50 text-green-800 px-4 py-3 text-sm font-medium border border-green-200">
-      {{ successMessage }}
+    <div
+      v-if="toastMessage"
+      class="fixed top-6 right-6 z-50 max-w-sm rounded-2xl border border-green-200 bg-white px-4 py-3 text-sm font-medium text-green-800 shadow-[0_20px_45px_rgba(22,101,52,0.18)]"
+    >
+      <div class="flex items-start gap-3">
+        <span class="mt-0.5 flex h-6 w-6 items-center justify-center rounded-full bg-green-100 text-green-700">
+          ✓
+        </span>
+        <span>{{ toastMessage }}</span>
+      </div>
     </div>
+
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
       <h1 class="text-2xl font-bold text-gray-900">Propiedades</h1>
       <button type="button" class="btn-primary" @click="goNew">Nueva propiedad</button>

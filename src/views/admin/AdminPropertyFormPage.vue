@@ -115,10 +115,16 @@ async function save() {
     }
     if (isEdit.value) {
       await updateProperty(route.params.id, payload)
-      router.push({ name: 'AdminProperties', query: { saved: '1' } })
+      router.push({
+        name: 'AdminProperties',
+        query: { saved: payload.isPublished ? 'published' : 'updated' },
+      })
     } else {
-      const created = await createProperty(payload)
-      router.push({ name: 'AdminProperties', query: { saved: '1' } })
+      await createProperty(payload)
+      router.push({
+        name: 'AdminProperties',
+        query: { saved: payload.isPublished ? 'published' : 'created' },
+      })
     }
   } catch (e) {
     error.value = e.message || 'Error al guardar'
