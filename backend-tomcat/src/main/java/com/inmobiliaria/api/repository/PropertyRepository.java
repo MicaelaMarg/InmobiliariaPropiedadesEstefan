@@ -147,7 +147,7 @@ public class PropertyRepository {
     List<Property> properties = query(
       BASE_SELECT + " where slug = ? and is_published = true and status = 'available'",
       List.of(slug),
-      false
+      true
     );
     return properties.isEmpty() ? null : properties.get(0);
   }
