@@ -95,6 +95,20 @@ const propertyStats = computed(() => {
       icon: 'M4 7h16M7 4v16M17 4v16M4 17h16',
     },
     {
+      key: 'frontLength',
+      show: !!p.frontLength,
+      label: 'Long. frente',
+      value: `${p.frontLength} m`,
+      icon: 'M4 12h16M7 8l-3 4 3 4M17 8l3 4-3 4',
+    },
+    {
+      key: 'depthLength',
+      show: !!p.depthLength,
+      label: 'Long. fondo',
+      value: `${p.depthLength} m`,
+      icon: 'M12 4v16M8 7l4-3 4 3M8 17l4 3 4-3',
+    },
+    {
       key: 'rooms',
       show: !!p.rooms,
       label: 'Ambientes',

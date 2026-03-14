@@ -18,6 +18,8 @@ public class Property {
   public String area;
   public Double totalArea;
   public Double coveredArea;
+  public Double frontLength;
+  public Double depthLength;
   public Integer bedrooms;
   public Integer bathrooms;
   public Integer rooms;

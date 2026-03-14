@@ -30,6 +30,8 @@ function createDefaultForm() {
   area: '',
   totalArea: '',
   coveredArea: '',
+  frontLength: '',
+  depthLength: '',
   bedrooms: '',
   bathrooms: '',
   rooms: '',
@@ -248,6 +250,14 @@ watch(featuresText, (t) => {
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">Superficie cubierta (m²)</label>
           <input v-model.number="form.coveredArea" type="number" min="0" step="0.01" class="w-full rounded-xl border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-primary-500" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Long. frente</label>
+          <input v-model.number="form.frontLength" type="number" min="0" step="0.01" class="w-full rounded-xl border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-primary-500" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Long. fondo</label>
+          <input v-model.number="form.depthLength" type="number" min="0" step="0.01" class="w-full rounded-xl border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-primary-500" />
         </div>
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">Ambientes</label>

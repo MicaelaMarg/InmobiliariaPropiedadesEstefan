@@ -25,7 +25,7 @@ public class PropertyRepository {
   private static final int MAX_PUBLIC_PAGE_SIZE = 48;
   private static final String BASE_SELECT = """
     select id, slug, title, type, category, operation, price, currency, location, address, city, area,
-           total_area, covered_area, bedrooms, bathrooms, rooms, state, description, features,
+           total_area, covered_area, front_length, depth_length, bedrooms, bathrooms, rooms, state, description, features,
            reference_code, status, is_published, is_featured, highlighted_messages, payment_options,
            services,
            contact_phone, contact_email,
@@ -159,12 +159,12 @@ public class PropertyRepository {
          PreparedStatement statement = connection.prepareStatement("""
            insert into properties (
              slug, title, type, category, operation, price, currency, location, address, city, area,
-             total_area, covered_area, bedrooms, bathrooms, rooms, state, description, features,
+             total_area, covered_area, front_length, depth_length, bedrooms, bathrooms, rooms, state, description, features,
              reference_code, status, is_published, is_featured, highlighted_messages, payment_options,
              services,
              contact_phone, contact_email,
              observations, youtube_url, created_at, updated_at
-           ) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+           ) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
            """, Statement.RETURN_GENERATED_KEYS)) {
       bindProperty(statement, property);
       statement.executeUpdate();
@@ -196,14 +196,14 @@ public class PropertyRepository {
            update properties
               set slug = ?, title = ?, type = ?, category = ?, operation = ?, price = ?, currency = ?,
                   location = ?, address = ?, city = ?, area = ?, total_area = ?, covered_area = ?,
-              bedrooms = ?, bathrooms = ?, rooms = ?, state = ?, description = ?, features = ?,
+              front_length = ?, depth_length = ?, bedrooms = ?, bathrooms = ?, rooms = ?, state = ?, description = ?, features = ?,
               reference_code = ?, status = ?, is_published = ?, is_featured = ?, highlighted_messages = ?,
               payment_options = ?, services = ?, contact_phone = ?, contact_email = ?, observations = ?, youtube_url = ?,
               created_at = ?, updated_at = ?
             where id = ?
            """)) {
       bindProperty(statement, merged);
-      statement.setLong(33, id);
+      statement.setLong(35, id);
       statement.executeUpdate();
 
       saveImages(connection, id, merged.images);
@@ -251,6 +251,8 @@ public class PropertyRepository {
     property.area = rs.getString("area");
     property.totalArea = getNullableDouble(rs, "total_area");
     property.coveredArea = getNullableDouble(rs, "covered_area");
+    property.frontLength = getNullableDouble(rs, "front_length");
+    property.depthLength = getNullableDouble(rs, "depth_length");
     property.bedrooms = getNullableInt(rs, "bedrooms");
     property.bathrooms = getNullableInt(rs, "bathrooms");
     property.rooms = getNullableInt(rs, "rooms");
@@ -394,25 +396,27 @@ public class PropertyRepository {
     statement.setString(11, property.area);
     statement.setObject(12, property.totalArea);
     statement.setObject(13, property.coveredArea);
-    statement.setObject(14, property.bedrooms);
-    statement.setObject(15, property.bathrooms);
-    statement.setObject(16, property.rooms);
-    statement.setString(17, property.state);
-    statement.setString(18, property.description);
-    statement.setString(19, JsonUtil.gson().toJson(property.features));
-    statement.setString(20, property.referenceCode);
-    statement.setString(21, property.status);
-    statement.setBoolean(22, Boolean.TRUE.equals(property.isPublished));
-    statement.setBoolean(23, Boolean.TRUE.equals(property.isFeatured));
-    statement.setString(24, JsonUtil.gson().toJson(property.highlightedMessages));
-    statement.setString(25, JsonUtil.gson().toJson(property.paymentOptions));
-    statement.setString(26, JsonUtil.gson().toJson(property.services));
-    statement.setString(27, property.contactPhone);
-    statement.setString(28, property.contactEmail);
-    statement.setString(29, property.observations);
-    statement.setString(30, property.youtubeUrl);
-    statement.setString(31, property.createdAt);
-    statement.setString(32, property.updatedAt);
+    statement.setObject(14, property.frontLength);
+    statement.setObject(15, property.depthLength);
+    statement.setObject(16, property.bedrooms);
+    statement.setObject(17, property.bathrooms);
+    statement.setObject(18, property.rooms);
+    statement.setString(19, property.state);
+    statement.setString(20, property.description);
+    statement.setString(21, JsonUtil.gson().toJson(property.features));
+    statement.setString(22, property.referenceCode);
+    statement.setString(23, property.status);
+    statement.setBoolean(24, Boolean.TRUE.equals(property.isPublished));
+    statement.setBoolean(25, Boolean.TRUE.equals(property.isFeatured));
+    statement.setString(26, JsonUtil.gson().toJson(property.highlightedMessages));
+    statement.setString(27, JsonUtil.gson().toJson(property.paymentOptions));
+    statement.setString(28, JsonUtil.gson().toJson(property.services));
+    statement.setString(29, property.contactPhone);
+    statement.setString(30, property.contactEmail);
+    statement.setString(31, property.observations);
+    statement.setString(32, property.youtubeUrl);
+    statement.setString(33, property.createdAt);
+    statement.setString(34, property.updatedAt);
   }
 
   private void bindParams(PreparedStatement statement, List<Object> params) throws SQLException {
@@ -475,6 +479,8 @@ public class PropertyRepository {
     merged.area = pick(changes.area, existing.area);
     merged.totalArea = changes.totalArea != null ? changes.totalArea : existing.totalArea;
     merged.coveredArea = changes.coveredArea != null ? changes.coveredArea : existing.coveredArea;
+    merged.frontLength = changes.frontLength != null ? changes.frontLength : existing.frontLength;
+    merged.depthLength = changes.depthLength != null ? changes.depthLength : existing.depthLength;
     merged.bedrooms = changes.bedrooms != null ? changes.bedrooms : existing.bedrooms;
     merged.bathrooms = changes.bathrooms != null ? changes.bathrooms : existing.bathrooms;
     merged.rooms = changes.rooms != null ? changes.rooms : existing.rooms;

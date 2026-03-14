@@ -103,6 +103,8 @@ public final class Database {
         area varchar(120),
         total_area double,
         covered_area double,
+        front_length double,
+        depth_length double,
         bedrooms int,
         bathrooms int,
         rooms int,
@@ -279,6 +281,18 @@ public final class Database {
       "properties",
       "services",
       "alter table properties add column services text"
+    );
+    ensureColumnExists(
+      connection,
+      "properties",
+      "front_length",
+      "alter table properties add column front_length double"
+    );
+    ensureColumnExists(
+      connection,
+      "properties",
+      "depth_length",
+      "alter table properties add column depth_length double"
     );
   }
 

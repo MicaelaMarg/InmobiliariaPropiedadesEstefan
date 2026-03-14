@@ -63,6 +63,8 @@ function sanitizePayload(value = {}) {
     price: toNullableNumber(value.price),
     totalArea: toNullableNumber(value.totalArea),
     coveredArea: toNullableNumber(value.coveredArea),
+    frontLength: toNullableNumber(value.frontLength),
+    depthLength: toNullableNumber(value.depthLength),
     bedrooms: toNullableNumber(value.bedrooms),
     bathrooms: toNullableNumber(value.bathrooms),
     rooms: toNullableNumber(value.rooms),
