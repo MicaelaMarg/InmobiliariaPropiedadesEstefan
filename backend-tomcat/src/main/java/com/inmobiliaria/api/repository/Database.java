@@ -116,6 +116,7 @@ public final class Database {
         contact_phone varchar(120),
         contact_email varchar(255),
         observations text,
+        youtube_url varchar(500),
         created_at varchar(40) not null,
         updated_at varchar(40) not null
       )
@@ -252,6 +253,12 @@ public final class Database {
       "idx_property_images_property_order",
       "create index idx_property_images_property_order on property_images (property_id, is_primary, display_order)"
     );
+    ensureColumnExists(
+      connection,
+      "properties",
+      "youtube_url",
+      "alter table properties add column youtube_url varchar(500)"
+    );
   }
 
   private static void ensureIndexExists(Connection connection, String tableName, String indexName, String createSql)
@@ -275,6 +282,29 @@ public final class Database {
 
     try (Statement statement = connection.createStatement()) {
       statement.execute(createSql);
+    }
+  }
+
+  private static void ensureColumnExists(Connection connection, String tableName, String columnName, String alterSql)
+    throws SQLException {
+    try (PreparedStatement statement = connection.prepareStatement("""
+      select count(*)
+        from information_schema.columns
+       where table_schema = database()
+         and table_name = ?
+         and column_name = ?
+      """)) {
+      statement.setString(1, tableName);
+      statement.setString(2, columnName);
+
+      try (ResultSet rs = statement.executeQuery()) {
+        rs.next();
+        if (rs.getInt(1) == 0) {
+          try (Statement alter = connection.createStatement()) {
+            alter.execute(alterSql);
+          }
+        }
+      }
     }
   }
 

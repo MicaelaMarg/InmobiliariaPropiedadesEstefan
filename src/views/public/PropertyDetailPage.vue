@@ -16,6 +16,37 @@ const similar = ref([])
 const loading = ref(true)
 const loadingSimilar = ref(false)
 
+function getYouTubeEmbedUrl(value) {
+  const raw = (value || '').trim()
+  if (!raw) return ''
+
+  try {
+    const url = new URL(raw)
+    const host = url.hostname.replace(/^www\./, '')
+
+    if (host === 'youtu.be') {
+      const id = url.pathname.split('/').filter(Boolean)[0]
+      return id ? `https://www.youtube.com/embed/${id}` : ''
+    }
+
+    if (host === 'youtube.com' || host === 'm.youtube.com') {
+      if (url.pathname === '/watch') {
+        const id = url.searchParams.get('v')
+        return id ? `https://www.youtube.com/embed/${id}` : ''
+      }
+
+      const segments = url.pathname.split('/').filter(Boolean)
+      if (segments[0] === 'embed' || segments[0] === 'shorts') {
+        return segments[1] ? `https://www.youtube.com/embed/${segments[1]}` : ''
+      }
+    }
+  } catch {
+    return ''
+  }
+
+  return ''
+}
+
 const typeLabel = computed(() => {
   if (!property.value) return ''
   const types = {
@@ -91,6 +122,8 @@ const propertyStats = computed(() => {
     },
   ].filter(item => item.show)
 })
+
+const youtubeEmbedUrl = computed(() => getYouTubeEmbedUrl(property.value?.youtubeUrl))
 
 onMounted(async () => {
   try {
@@ -172,6 +205,21 @@ onMounted(async () => {
             {{ f }}
           </li>
         </ul>
+      </div>
+
+      <div v-if="youtubeEmbedUrl" class="mb-8">
+        <h2 class="text-lg font-semibold text-gray-900 mb-3">Video</h2>
+        <div class="overflow-hidden rounded-2xl bg-black shadow-card aspect-video">
+          <iframe
+            :src="youtubeEmbedUrl"
+            :title="`Video de ${property.title}`"
+            class="h-full w-full"
+            loading="lazy"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            allowfullscreen
+            referrerpolicy="strict-origin-when-cross-origin"
+          />
+        </div>
       </div>
 
       <PropertyMap :property="property" />

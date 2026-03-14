@@ -32,6 +32,7 @@ public class Property {
   public String contactPhone;
   public String contactEmail;
   public String observations;
+  public String youtubeUrl;
   public String createdAt;
   public String updatedAt;
 }

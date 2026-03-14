@@ -26,7 +26,7 @@ public class PropertyRepository {
     select id, slug, title, type, category, operation, price, currency, location, address, city, area,
            total_area, covered_area, bedrooms, bathrooms, rooms, state, description, features,
            reference_code, status, is_published, is_featured, contact_phone, contact_email,
-           observations, created_at, updated_at
+           observations, youtube_url, created_at, updated_at
     from properties
     """;
 
@@ -158,8 +158,8 @@ public class PropertyRepository {
              slug, title, type, category, operation, price, currency, location, address, city, area,
              total_area, covered_area, bedrooms, bathrooms, rooms, state, description, features,
              reference_code, status, is_published, is_featured, contact_phone, contact_email,
-             observations, created_at, updated_at
-           ) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+             observations, youtube_url, created_at, updated_at
+           ) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
            """, Statement.RETURN_GENERATED_KEYS)) {
       bindProperty(statement, property);
       statement.executeUpdate();
@@ -191,13 +191,13 @@ public class PropertyRepository {
            update properties
               set slug = ?, title = ?, type = ?, category = ?, operation = ?, price = ?, currency = ?,
                   location = ?, address = ?, city = ?, area = ?, total_area = ?, covered_area = ?,
-                  bedrooms = ?, bathrooms = ?, rooms = ?, state = ?, description = ?, features = ?,
-                  reference_code = ?, status = ?, is_published = ?, is_featured = ?, contact_phone = ?,
-                  contact_email = ?, observations = ?, created_at = ?, updated_at = ?
+              bedrooms = ?, bathrooms = ?, rooms = ?, state = ?, description = ?, features = ?,
+              reference_code = ?, status = ?, is_published = ?, is_featured = ?, contact_phone = ?,
+              contact_email = ?, observations = ?, youtube_url = ?, created_at = ?, updated_at = ?
             where id = ?
            """)) {
       bindProperty(statement, merged);
-      statement.setLong(29, id);
+      statement.setLong(30, id);
       statement.executeUpdate();
 
       saveImages(connection, id, merged.images);
@@ -258,6 +258,7 @@ public class PropertyRepository {
     property.contactPhone = rs.getString("contact_phone");
     property.contactEmail = rs.getString("contact_email");
     property.observations = rs.getString("observations");
+    property.youtubeUrl = rs.getString("youtube_url");
     property.createdAt = rs.getString("created_at");
     property.updatedAt = rs.getString("updated_at");
     return property;
@@ -397,8 +398,9 @@ public class PropertyRepository {
     statement.setString(24, property.contactPhone);
     statement.setString(25, property.contactEmail);
     statement.setString(26, property.observations);
-    statement.setString(27, property.createdAt);
-    statement.setString(28, property.updatedAt);
+    statement.setString(27, property.youtubeUrl);
+    statement.setString(28, property.createdAt);
+    statement.setString(29, property.updatedAt);
   }
 
   private void bindParams(PreparedStatement statement, List<Object> params) throws SQLException {
@@ -430,6 +432,7 @@ public class PropertyRepository {
     property.isFeatured = property.isFeatured != null ? property.isFeatured : Boolean.FALSE;
     property.features = property.features != null ? property.features : new ArrayList<>();
     property.images = property.images != null ? property.images : new ArrayList<>();
+    property.youtubeUrl = notBlank(property.youtubeUrl) ? property.youtubeUrl.trim() : null;
 
     String now = Instant.now().toString();
     property.createdAt = defaultIfBlank(property.createdAt, now);
@@ -471,6 +474,7 @@ public class PropertyRepository {
     merged.contactPhone = pick(changes.contactPhone, existing.contactPhone);
     merged.contactEmail = pick(changes.contactEmail, existing.contactEmail);
     merged.observations = pick(changes.observations, existing.observations);
+    merged.youtubeUrl = pick(changes.youtubeUrl, existing.youtubeUrl);
     merged.createdAt = existing.createdAt;
     merged.updatedAt = Instant.now().toString();
     return merged;

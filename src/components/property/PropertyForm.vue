@@ -35,6 +35,7 @@ function createDefaultForm() {
   contactPhone: '',
   contactEmail: '',
   observations: '',
+  youtubeUrl: '',
   }
 }
 

@@ -17,6 +17,37 @@ const error = ref('')
 const formData = ref({})
 const images = ref([])
 
+function normalizeYouTubeUrl(value) {
+  const raw = (value || '').trim()
+  if (!raw) return null
+
+  try {
+    const url = new URL(raw)
+    const host = url.hostname.replace(/^www\./, '')
+
+    if (host === 'youtu.be') {
+      const id = url.pathname.split('/').filter(Boolean)[0]
+      return id ? `https://www.youtube.com/watch?v=${id}` : null
+    }
+
+    if (host === 'youtube.com' || host === 'm.youtube.com') {
+      if (url.pathname === '/watch') {
+        const id = url.searchParams.get('v')
+        return id ? `https://www.youtube.com/watch?v=${id}` : null
+      }
+
+      const segments = url.pathname.split('/').filter(Boolean)
+      if (segments[0] === 'embed' || segments[0] === 'shorts') {
+        return segments[1] ? `https://www.youtube.com/watch?v=${segments[1]}` : null
+      }
+    }
+  } catch {
+    return null
+  }
+
+  return null
+}
+
 function toNullableNumber(value) {
   if (value === '' || value === null || value === undefined) {
     return null
@@ -35,6 +66,7 @@ function sanitizePayload(value = {}) {
     bedrooms: toNullableNumber(value.bedrooms),
     bathrooms: toNullableNumber(value.bathrooms),
     rooms: toNullableNumber(value.rooms),
+    youtubeUrl: normalizeYouTubeUrl(value.youtubeUrl),
   }
 }
 
@@ -63,6 +95,10 @@ onMounted(async () => {
 async function save() {
   if (!formData.value.title?.trim()) {
     error.value = 'El título es obligatorio.'
+    return
+  }
+  if (formData.value.youtubeUrl?.trim() && !normalizeYouTubeUrl(formData.value.youtubeUrl)) {
+    error.value = 'El enlace de YouTube no es válido.'
     return
   }
   error.value = ''
@@ -109,6 +145,17 @@ function cancel() {
       <div class="bg-white rounded-2xl shadow-card p-6 mb-8">
         <h3 class="font-semibold text-gray-900 mb-4">Imágenes</h3>
         <ImageUploader v-model="images" />
+
+        <div class="mt-6">
+          <label class="block text-sm font-medium text-gray-700 mb-1">Enlace de YouTube</label>
+          <input
+            v-model="formData.youtubeUrl"
+            type="url"
+            class="w-full rounded-xl border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-primary-500"
+            placeholder="https://www.youtube.com/watch?v=..."
+          />
+          <p class="mt-2 text-xs text-gray-500">Pegá el enlace del video y se mostrará en la ficha de la propiedad.</p>
+        </div>
       </div>
 
       <div class="flex gap-3">
