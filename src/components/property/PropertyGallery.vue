@@ -13,7 +13,7 @@ const sortedImages = computed(() => {
   return list.length ? list : [{ url: 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=1200', isPrimary: true }]
 })
 
-const currentImage = computed(() => sortedImages.value[currentIndex.value]?.url || sortedImages.value[0]?.url)
+const currentImage = computed(() => sortedImages.value[currentIndex.value] || sortedImages.value[0] || null)
 
 watch(() => props.images, () => { currentIndex.value = 0 }, { deep: true })
 
@@ -23,25 +23,32 @@ function setIndex(i) {
 </script>
 
 <template>
-  <div class="rounded-2xl overflow-hidden bg-gray-100">
-    <div class="aspect-[4/3] md:aspect-[21/9] relative">
+  <div class="overflow-hidden rounded-[28px] border border-gray-200 bg-white shadow-card">
+    <div class="relative flex items-center justify-center bg-slate-950 px-3 py-3 md:px-6 md:py-5">
       <img
-        :src="currentImage"
+        :src="currentImage?.url"
         :alt="alt"
-        class="w-full h-full object-cover"
+        class="h-[320px] w-full object-contain md:h-[560px]"
       />
-      <div
-        v-if="sortedImages.length > 1"
-        class="absolute bottom-3 left-0 right-0 flex justify-center gap-2"
-      >
+    </div>
+
+    <div v-if="sortedImages.length > 1" class="border-t border-gray-200 bg-white px-4 py-4">
+      <div class="flex gap-3 overflow-x-auto pb-1">
         <button
           v-for="(img, i) in sortedImages"
+          :key="`${img.url}-${i}`"
           type="button"
-          class="w-2.5 h-2.5 rounded-full transition-colors"
-          :class="i === currentIndex ? 'bg-white ring-2 ring-primary-500' : 'bg-white/60 hover:bg-white/80'"
+          class="relative h-20 w-24 flex-shrink-0 overflow-hidden rounded-2xl border-2 bg-gray-100 transition"
+          :class="i === currentIndex ? 'border-primary-500 shadow-sm' : 'border-transparent hover:border-gray-300'"
           :aria-label="`Ver imagen ${i + 1}`"
           @click="setIndex(i)"
-        />
+        >
+          <img
+            :src="img.url"
+            :alt="`${alt} ${i + 1}`"
+            class="h-full w-full object-cover"
+          />
+        </button>
       </div>
     </div>
   </div>
