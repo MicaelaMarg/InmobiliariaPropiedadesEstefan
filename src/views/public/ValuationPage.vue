@@ -4,6 +4,7 @@ import { useAppStore } from '../../stores/app'
 
 const app = useAppStore()
 const settings = app.settings
+const valuationImageSrc = '/images/imagen-hero.png'
 
 const form = ref({
   name: '',
@@ -70,12 +71,33 @@ const socialLinks = computed(() => [
 <template>
   <section class="bg-gradient-to-b from-emerald-50 via-[#f7faf8] to-white">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14 md:py-20">
-      <div class="max-w-3xl mb-10 md:mb-14">
-        <p class="text-sm font-semibold uppercase tracking-[0.28em] text-emerald-700 mb-3">Tasacion</p>
-        <h1 class="text-3xl md:text-5xl font-bold text-slate-950 leading-tight">Tasación de propiedades</h1>
-        <p class="mt-4 text-base md:text-lg leading-8 text-slate-600">
-          Un espacio profesional para propietarios que quieren vender o alquilar con una valuacion clara, estrategica y respaldada por mercado real.
-        </p>
+      <div class="mb-10 overflow-hidden rounded-[30px] bg-white shadow-[0_24px_60px_rgba(15,23,42,0.08)] ring-1 ring-emerald-100 md:mb-14">
+        <div class="grid lg:grid-cols-2">
+          <div class="relative flex items-center bg-gradient-to-br from-emerald-950 via-emerald-800 to-emerald-400 px-6 py-12 text-white sm:px-10 lg:px-14 lg:py-16">
+            <div class="max-w-2xl">
+              <p class="mb-3 text-sm font-semibold uppercase tracking-[0.28em] text-emerald-100/90">Tasacion</p>
+              <h1 class="text-3xl font-bold leading-tight md:text-5xl">Tasación de propiedades</h1>
+              <p class="mt-5 text-base leading-8 text-emerald-50 md:text-lg">
+                Un espacio profesional para propietarios que quieren vender o alquilar con una valuacion clara, estrategica y respaldada por mercado real.
+              </p>
+              <p class="mt-4 text-sm leading-7 text-emerald-100/90 md:text-base">
+                Analizamos tu inmueble, el contexto del mercado y el potencial comercial para ayudarte a tomar mejores decisiones.
+              </p>
+            </div>
+            <div class="pointer-events-none absolute inset-y-0 -right-16 hidden w-40 bg-gradient-to-r from-emerald-700/90 via-emerald-400/45 to-transparent blur-2xl lg:block" />
+          </div>
+
+          <div class="relative bg-slate-100">
+            <img
+              :src="valuationImageSrc"
+              alt="Imagen de presentación para tasación de propiedades"
+              class="h-full min-h-[280px] w-full object-cover object-center lg:min-h-[460px]"
+              loading="eager"
+            />
+            <div class="pointer-events-none absolute inset-0 bg-[linear-gradient(115deg,rgba(2,6,23,0.12)_0%,rgba(2,6,23,0.04)_45%,rgba(2,6,23,0.14)_100%)]" />
+            <div class="pointer-events-none absolute inset-y-0 left-0 hidden w-36 bg-gradient-to-r from-black/65 via-black/26 to-transparent lg:block" />
+          </div>
+        </div>
       </div>
 
       <div class="grid grid-cols-1 gap-8 items-stretch">

@@ -6,6 +6,7 @@ const app = useAppStore()
 const settings = app.settings
 const whatsappUrl = `https://wa.me/${settings.whatsapp.replace(/\D/g, '')}`
 const mapSrc = 'https://www.google.com/maps?q=Acapulco+79,+Santa+Clara+del+Mar,+Buenos+Aires,+Argentina&z=16&output=embed'
+const contactHeroImageSrc = '/images/branding/fotoContacto.jpeg'
 
 const contactItems = [
   {
@@ -40,14 +41,31 @@ const contactItems = [
 <template>
   <section class="bg-gradient-to-b from-emerald-50 via-white to-white">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14 md:py-20">
-      <div class="max-w-3xl mb-10 md:mb-14">
-        <p class="text-sm font-semibold uppercase tracking-[0.28em] text-emerald-700 mb-3">Contacto</p>
-        <h1 class="text-3xl md:text-5xl font-bold text-slate-900 leading-tight">
-          Contacto directo para consultas, tasaciones y oportunidades inmobiliarias
-        </h1>
-        <p class="mt-4 text-base md:text-lg text-slate-600">
-          Un espacio claro y profesional para que puedas comunicarte con Erika M. Estefan Propiedades por el medio que te resulte mas comodo.
-        </p>
+      <div class="mb-10 overflow-hidden rounded-[30px] bg-white shadow-[0_24px_60px_rgba(15,23,42,0.08)] ring-1 ring-emerald-100 md:mb-14">
+        <div class="grid lg:grid-cols-2">
+          <div class="relative bg-slate-100">
+            <img
+              :src="contactHeroImageSrc"
+              alt="Imagen de contacto de Erika M. Estefan Propiedades"
+              class="h-full min-h-[280px] w-full object-cover object-center lg:min-h-[420px]"
+              loading="eager"
+            />
+            <div class="pointer-events-none absolute inset-0 bg-[linear-gradient(115deg,rgba(2,6,23,0.10)_0%,rgba(2,6,23,0.03)_48%,rgba(2,6,23,0.10)_100%)]" />
+          </div>
+
+          <div class="relative flex items-center bg-gradient-to-br from-emerald-950 via-emerald-800 to-emerald-400 px-6 py-12 text-white sm:px-10 lg:px-14 lg:py-16">
+            <div class="max-w-2xl">
+              <p class="mb-3 text-sm font-semibold uppercase tracking-[0.28em] text-emerald-100/90">Contacto</p>
+              <h1 class="text-3xl font-bold leading-tight md:text-5xl">
+                Contacto directo para consultas, tasas y oportunidades inmobiliarias
+              </h1>
+              <p class="mt-5 text-base leading-8 text-emerald-50 md:text-lg">
+                Un espacio claro y profesional para que puedas comunicarte con Erika M. Estefan Propiedades por el medio que te resulte más cómodo.
+              </p>
+            </div>
+            <div class="pointer-events-none absolute inset-y-0 -left-16 hidden w-40 bg-gradient-to-l from-emerald-700/90 via-emerald-400/45 to-transparent blur-2xl lg:block" />
+          </div>
+        </div>
       </div>
 
       <div class="grid grid-cols-1 xl:grid-cols-[minmax(0,1.02fr)_minmax(0,1fr)] gap-8 lg:gap-10 items-stretch">
