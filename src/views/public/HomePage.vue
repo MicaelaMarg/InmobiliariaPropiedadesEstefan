@@ -9,15 +9,9 @@ const router = useRouter()
 const featured = ref([])
 const loading = ref(true)
 const googleReviewsUrl = 'https://maps.app.goo.gl/j8Vnf6GnBffEAH9g6'
-const heroImageConfig = {
-  src: '/images/imagen-hero.png',
-  fallbackSrc: 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=1920',
-  alt: 'Imagen principal de Erika M. Estefan Propiedades',
-  fitClass: 'object-contain',
-  position: 'center center',
-  heightClass: 'min-h-[430px] md:min-h-[560px]',
-}
-const heroImageSrc = ref(heroImageConfig.src)
+const HERO_IMAGE_SRC = '/images/branding/IMG_3241_1_11zon.jpg'
+const HERO_IMAGE_FALLBACK_SRC = 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=1920'
+const heroImageSrc = ref(HERO_IMAGE_SRC)
 
 const testimonials = [
   {
@@ -88,8 +82,8 @@ function goContact() {
 }
 
 function handleHeroImageError() {
-  if (heroImageSrc.value !== heroImageConfig.fallbackSrc) {
-    heroImageSrc.value = heroImageConfig.fallbackSrc
+  if (heroImageSrc.value !== HERO_IMAGE_FALLBACK_SRC) {
+    heroImageSrc.value = HERO_IMAGE_FALLBACK_SRC
   }
 }
 </script>
@@ -97,38 +91,39 @@ function handleHeroImageError() {
 <template>
   <div>
     <!-- Hero -->
-    <section
-      class="relative bg-gradient-to-br from-primary-600 to-primary-800 text-white overflow-hidden"
-      :class="heroImageConfig.heightClass"
-    >
-      <div class="absolute inset-0 bg-primary-950/40 z-10" />
-      <div class="absolute inset-0 opacity-100">
-        <img
-          :src="heroImageSrc"
-          :alt="heroImageConfig.alt"
-          class="w-full h-full"
-          :class="heroImageConfig.fitClass"
-          :style="{ objectPosition: heroImageConfig.position }"
-          loading="eager"
-          @error="handleHeroImageError"
-        />
-      </div>
-      <div class="relative z-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-28">
-        <div class="max-w-2xl">
-          <h1 class="text-4xl md:text-5xl font-bold leading-tight mb-4">
-            Encontrá tu próximo hogar o inversión
-          </h1>
-          <p class="text-lg text-primary-100 mb-8">
-            Propiedades, lotes y fondos de comercio. Asesoramiento profesional para venta y alquiler.
-          </p>
-          <div class="flex flex-wrap gap-4">
-            <button type="button" class="btn-primary bg-white text-primary-700 hover:bg-gray-100 text-lg px-6 py-3" @click="goCatalog">
-              Ver catálogo
-            </button>
-            <button type="button" class="border-2 border-white rounded-xl px-6 py-3 font-medium hover:bg-white/10 transition-colors" @click="goContact">
-              Contacto
-            </button>
+    <section class="relative overflow-hidden bg-white">
+      <div class="pointer-events-none absolute inset-0 z-10 bg-[linear-gradient(115deg,rgba(2,6,23,0.28)_0%,rgba(2,6,23,0.16)_38%,rgba(2,6,23,0.10)_64%,rgba(2,6,23,0.22)_100%)]" />
+      <div class="grid min-h-[520px] lg:min-h-[78vh] lg:grid-cols-2">
+        <div class="relative z-10 flex items-center bg-gradient-to-br from-emerald-950 via-emerald-800 to-emerald-400 px-6 py-12 text-white sm:px-10 lg:px-16 lg:py-16 xl:px-24">
+          <div class="relative z-20 mx-auto max-w-2xl lg:max-w-xl">
+            <p class="mb-3 text-sm font-semibold uppercase tracking-[0.22em] text-emerald-100/90">Erika M. Estefan Propiedades</p>
+            <h1 class="text-4xl font-bold leading-tight md:text-5xl">
+              Encontrá tu próximo hogar o inversión
+            </h1>
+            <p class="mt-5 text-lg text-emerald-50 md:text-xl">
+              Propiedades, lotes y fondos de comercio. Asesoramiento profesional para venta y alquiler.
+            </p>
+            <div class="mt-8 flex flex-wrap gap-4">
+              <button type="button" class="rounded-xl bg-white px-6 py-3 text-base font-semibold text-emerald-800 transition hover:bg-emerald-50" @click="goCatalog">
+                Ver catálogo
+              </button>
+              <button type="button" class="rounded-xl border border-white/70 px-6 py-3 text-base font-semibold text-white transition hover:bg-white/10" @click="goContact">
+                Contacto
+              </button>
+            </div>
           </div>
+          <div class="pointer-events-none absolute inset-y-0 right-0 hidden w-48 bg-gradient-to-r from-transparent via-emerald-300/35 to-emerald-200/10 lg:block" />
+        </div>
+
+        <div class="relative bg-slate-100 ring-1 ring-slate-200/80">
+          <img
+            :src="heroImageSrc"
+            alt="Imagen principal de Erika M. Estefan Propiedades"
+            class="h-full min-h-[320px] w-full object-cover object-center lg:min-h-[78vh]"
+            loading="eager"
+            @error="handleHeroImageError"
+          />
+          <div class="pointer-events-none absolute inset-y-0 left-0 hidden w-44 bg-gradient-to-r from-black/75 via-black/35 to-transparent lg:block" />
         </div>
       </div>
     </section>
