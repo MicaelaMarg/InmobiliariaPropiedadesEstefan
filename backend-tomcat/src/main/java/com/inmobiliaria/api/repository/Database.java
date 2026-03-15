@@ -132,6 +132,17 @@ public final class Database {
         id bigint auto_increment primary key,
         property_id bigint not null,
         url mediumtext not null,
+        thumbnail_url mediumtext,
+        medium_url mediumtext,
+        large_url mediumtext,
+        placeholder_url mediumtext,
+        width int,
+        height int,
+        thumbnail_width int,
+        medium_width int,
+        large_width int,
+        mime_type varchar(120),
+        original_name varchar(255),
         display_order int not null,
         is_primary boolean not null,
         foreign key (property_id) references properties(id) on delete cascade
@@ -240,6 +251,72 @@ public final class Database {
     // Asegura compatibilidad con instalaciones previas donde url podía haber quedado en VARCHAR/TEXT.
     // El admin actual guarda imágenes como data URLs, que superan fácilmente 255 caracteres.
     statement.execute("alter table property_images modify column url mediumtext not null");
+    ensureColumnExists(
+      connection,
+      "property_images",
+      "thumbnail_url",
+      "alter table property_images add column thumbnail_url mediumtext"
+    );
+    ensureColumnExists(
+      connection,
+      "property_images",
+      "medium_url",
+      "alter table property_images add column medium_url mediumtext"
+    );
+    ensureColumnExists(
+      connection,
+      "property_images",
+      "large_url",
+      "alter table property_images add column large_url mediumtext"
+    );
+    ensureColumnExists(
+      connection,
+      "property_images",
+      "placeholder_url",
+      "alter table property_images add column placeholder_url mediumtext"
+    );
+    ensureColumnExists(
+      connection,
+      "property_images",
+      "width",
+      "alter table property_images add column width int"
+    );
+    ensureColumnExists(
+      connection,
+      "property_images",
+      "height",
+      "alter table property_images add column height int"
+    );
+    ensureColumnExists(
+      connection,
+      "property_images",
+      "thumbnail_width",
+      "alter table property_images add column thumbnail_width int"
+    );
+    ensureColumnExists(
+      connection,
+      "property_images",
+      "medium_width",
+      "alter table property_images add column medium_width int"
+    );
+    ensureColumnExists(
+      connection,
+      "property_images",
+      "large_width",
+      "alter table property_images add column large_width int"
+    );
+    ensureColumnExists(
+      connection,
+      "property_images",
+      "mime_type",
+      "alter table property_images add column mime_type varchar(120)"
+    );
+    ensureColumnExists(
+      connection,
+      "property_images",
+      "original_name",
+      "alter table property_images add column original_name varchar(255)"
+    );
     ensureIndexExists(
       connection,
       "properties",

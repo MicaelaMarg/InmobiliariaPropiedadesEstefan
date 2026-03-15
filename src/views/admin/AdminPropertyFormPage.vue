@@ -110,7 +110,12 @@ async function save() {
       ...sanitizePayload(formData.value),
       slug: formData.value.slug || slugify(formData.value.title),
       images: images.value.map((img, i) => ({
-        url: img.url || '',
+        ...img,
+        url: img.largeUrl || img.url || img.mediumUrl || img.thumbnailUrl || '',
+        thumbnailUrl: img.thumbnailUrl || img.mediumUrl || img.url || '',
+        mediumUrl: img.mediumUrl || img.largeUrl || img.url || img.thumbnailUrl || '',
+        largeUrl: img.largeUrl || img.url || img.mediumUrl || img.thumbnailUrl || '',
+        placeholderUrl: img.placeholderUrl || null,
         order: i,
         isPrimary: i === 0 || (img.isPrimary === true),
       })).filter(img => img.url),

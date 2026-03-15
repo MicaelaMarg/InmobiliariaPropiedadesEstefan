@@ -1,5 +1,6 @@
 <script setup>
 import { ref, watch } from 'vue'
+import { getImageUrl } from '../../utils/propertyImages'
 
 const props = defineProps({
   modelValue: { type: Array, default: () => [] },
@@ -9,18 +10,62 @@ const props = defineProps({
 const emit = defineEmits(['update:modelValue'])
 const input = ref(null)
 const uploading = ref(false)
-const MAX_DIMENSION = 1600
-const JPEG_QUALITY = 0.8
+const IMAGE_DIMENSIONS = {
+  thumbnail: 420,
+  medium: 960,
+  large: 1680,
+  placeholder: 32,
+}
+let preferredMimeTypePromise = null
 
-const images = ref(props.modelValue.length ? props.modelValue.map(img => ({ url: img.url, order: img.order ?? 0, isPrimary: !!img.isPrimary })) : [])
+const images = ref(props.modelValue.length ? props.modelValue.map(normalizeStoredImage) : [])
 
 watch(() => props.modelValue, (v) => {
-  if (v?.length) images.value = v.map(img => ({ url: img.url, order: img.order ?? 0, isPrimary: !!img.isPrimary }))
+  if (v?.length) images.value = v.map(normalizeStoredImage)
   else images.value = []
 }, { deep: true })
 
 function emitValue() {
-  emit('update:modelValue', images.value.map((img, idx) => ({ url: img.url, order: idx, isPrimary: !!img.isPrimary })))
+  emit('update:modelValue', images.value.map((img, idx) => serializeImage(img, idx)))
+}
+
+function normalizeStoredImage(image = {}) {
+  return {
+    ...image,
+    url: image.url || image.largeUrl || image.mediumUrl || image.thumbnailUrl || '',
+    thumbnailUrl: image.thumbnailUrl || image.mediumUrl || image.url || '',
+    mediumUrl: image.mediumUrl || image.largeUrl || image.url || image.thumbnailUrl || '',
+    largeUrl: image.largeUrl || image.url || image.mediumUrl || image.thumbnailUrl || '',
+    placeholderUrl: image.placeholderUrl || null,
+    width: image.width ?? null,
+    height: image.height ?? null,
+    thumbnailWidth: image.thumbnailWidth ?? null,
+    mediumWidth: image.mediumWidth ?? null,
+    largeWidth: image.largeWidth ?? image.width ?? null,
+    mimeType: image.mimeType || null,
+    originalName: image.originalName || null,
+    order: image.order ?? 0,
+    isPrimary: !!image.isPrimary,
+  }
+}
+
+function serializeImage(image = {}, index = 0) {
+  return {
+    url: image.largeUrl || image.url || image.mediumUrl || image.thumbnailUrl || '',
+    thumbnailUrl: image.thumbnailUrl || image.mediumUrl || image.url || '',
+    mediumUrl: image.mediumUrl || image.largeUrl || image.url || image.thumbnailUrl || '',
+    largeUrl: image.largeUrl || image.url || image.mediumUrl || image.thumbnailUrl || '',
+    placeholderUrl: image.placeholderUrl || null,
+    width: image.width ?? null,
+    height: image.height ?? null,
+    thumbnailWidth: image.thumbnailWidth ?? null,
+    mediumWidth: image.mediumWidth ?? null,
+    largeWidth: image.largeWidth ?? image.width ?? null,
+    mimeType: image.mimeType || null,
+    originalName: image.originalName || null,
+    order: index,
+    isPrimary: !!image.isPrimary,
+  }
 }
 
 function fileToDataUrl(file) {
@@ -29,6 +74,15 @@ function fileToDataUrl(file) {
     reader.onload = () => resolve(reader.result)
     reader.onerror = () => reject(new Error('No se pudo leer la imagen'))
     reader.readAsDataURL(file)
+  })
+}
+
+function blobToDataUrl(blob) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(reader.result)
+    reader.onerror = () => reject(new Error('No se pudo generar la imagen optimizada'))
+    reader.readAsDataURL(blob)
   })
 }
 
@@ -48,24 +102,109 @@ function loadImage(file) {
   })
 }
 
-async function fileToOptimizedDataUrl(file) {
-  const image = await loadImage(file)
-  const longestSide = Math.max(image.width, image.height)
-  const scale = longestSide > MAX_DIMENSION ? MAX_DIMENSION / longestSide : 1
+async function getPreferredMimeType() {
+  if (!preferredMimeTypePromise) {
+    preferredMimeTypePromise = Promise.resolve().then(() => {
+      const canvas = document.createElement('canvas')
+      canvas.width = 1
+      canvas.height = 1
+      return canvas.toDataURL('image/webp').startsWith('data:image/webp') ? 'image/webp' : 'image/jpeg'
+    })
+  }
 
+  return preferredMimeTypePromise
+}
+
+async function canvasToDataUrl(canvas, mimeType, quality) {
+  if (!canvas.toBlob) {
+    return canvas.toDataURL(mimeType, quality)
+  }
+
+  return new Promise((resolve) => {
+    canvas.toBlob(async (blob) => {
+      if (!blob) {
+        resolve(canvas.toDataURL(mimeType, quality))
+        return
+      }
+
+      resolve(await blobToDataUrl(blob))
+    }, mimeType, quality)
+  })
+}
+
+async function createVariant(image, maxDimension, mimeType, quality) {
+  const longestSide = Math.max(image.width, image.height)
+  const scale = longestSide > maxDimension ? maxDimension / longestSide : 1
   const canvas = document.createElement('canvas')
   canvas.width = Math.max(1, Math.round(image.width * scale))
   canvas.height = Math.max(1, Math.round(image.height * scale))
 
   const context = canvas.getContext('2d')
   if (!context) {
-    return fileToDataUrl(file)
+    return {
+      dataUrl: null,
+      width: image.width,
+      height: image.height,
+    }
   }
 
+  context.imageSmoothingEnabled = true
+  context.imageSmoothingQuality = 'high'
   context.drawImage(image, 0, 0, canvas.width, canvas.height)
 
-  // Usamos JPEG para bajar tamaño manteniendo buena calidad visual en catálogo.
-  return canvas.toDataURL('image/jpeg', JPEG_QUALITY)
+  return {
+    dataUrl: await canvasToDataUrl(canvas, mimeType, quality),
+    width: canvas.width,
+    height: canvas.height,
+  }
+}
+
+async function fileToOptimizedImage(file) {
+  const image = await loadImage(file)
+  const mimeType = await getPreferredMimeType()
+  const quality = mimeType === 'image/webp'
+    ? { thumbnail: 0.72, medium: 0.78, large: 0.84 }
+    : { thumbnail: 0.74, medium: 0.8, large: 0.86 }
+
+  const [thumbnail, medium, large, placeholder] = await Promise.all([
+    createVariant(image, IMAGE_DIMENSIONS.thumbnail, mimeType, quality.thumbnail),
+    createVariant(image, IMAGE_DIMENSIONS.medium, mimeType, quality.medium),
+    createVariant(image, IMAGE_DIMENSIONS.large, mimeType, quality.large),
+    createVariant(image, IMAGE_DIMENSIONS.placeholder, 'image/jpeg', 0.45),
+  ])
+
+  if (!large.dataUrl) {
+    const url = await fileToDataUrl(file)
+    return normalizeStoredImage({
+      url,
+      thumbnailUrl: url,
+      mediumUrl: url,
+      largeUrl: url,
+      placeholderUrl: url,
+      width: image.width,
+      height: image.height,
+      thumbnailWidth: image.width,
+      mediumWidth: image.width,
+      largeWidth: image.width,
+      mimeType: file.type || 'image/jpeg',
+      originalName: file.name,
+    })
+  }
+
+  return normalizeStoredImage({
+    url: large.dataUrl,
+    thumbnailUrl: thumbnail.dataUrl || medium.dataUrl || large.dataUrl,
+    mediumUrl: medium.dataUrl || large.dataUrl,
+    largeUrl: large.dataUrl,
+    placeholderUrl: placeholder.dataUrl || null,
+    width: image.width,
+    height: image.height,
+    thumbnailWidth: thumbnail.width,
+    mediumWidth: medium.width,
+    largeWidth: large.width,
+    mimeType,
+    originalName: file.name,
+  })
 }
 
 async function addFiles(files) {
@@ -75,9 +214,9 @@ async function addFiles(files) {
   try {
     for (const file of toAdd) {
       if (!file.type.startsWith('image/')) continue
-      const url = await fileToOptimizedDataUrl(file)
+      const nextImage = await fileToOptimizedImage(file)
       images.value.push({
-        url,
+        ...nextImage,
         order: images.value.length,
         isPrimary: images.value.length === 0,
       })
@@ -130,16 +269,33 @@ function triggerInput() {
         {{ uploading ? 'Procesando...' : 'Subir imágenes' }}
       </button>
     </div>
-    <p class="text-xs text-gray-500">Podés elegir la imagen principal y reordenar. Máximo {{ maxFiles }}. Las imágenes se optimizan antes de guardarse.</p>
+    <p class="text-xs text-gray-500">
+      Máximo {{ maxFiles }} archivos. Se generan automáticamente miniatura, versión media, versión grande y placeholder suave.
+      Se prioriza WebP cuando el navegador lo soporta y se conserva la proporción original.
+    </p>
     <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
       <div
         v-for="(img, i) in images"
         :key="i"
-        class="relative aspect-square rounded-xl overflow-hidden bg-gray-100 border-2"
+        class="group relative overflow-hidden rounded-xl border-2 bg-gray-100"
         :class="img.isPrimary ? 'border-primary-500' : 'border-transparent'"
       >
-        <img :src="img.url" alt="" class="w-full h-full object-cover" />
-        <div class="absolute inset-0 bg-black/40 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center gap-1">
+        <div class="aspect-[4/3]">
+          <img :src="getImageUrl(img, 'thumbnail')" alt="" class="h-full w-full object-cover" loading="lazy" />
+        </div>
+
+        <div class="absolute left-2 top-2 rounded-full bg-slate-950/65 px-2 py-1 text-[10px] font-medium uppercase tracking-[0.2em] text-white">
+          {{ img.mimeType === 'image/webp' ? 'WebP' : 'JPEG' }}
+        </div>
+
+        <div class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 via-black/35 to-transparent p-2 text-[11px] text-white">
+          <div class="flex items-center justify-between gap-2">
+            <span>{{ img.width || '?' }}×{{ img.height || '?' }}</span>
+            <span>{{ img.largeWidth || img.width || '?' }}px</span>
+          </div>
+        </div>
+
+        <div class="absolute inset-0 flex items-center justify-center gap-1 bg-black/40 opacity-100 transition-opacity md:opacity-0 md:group-hover:opacity-100">
           <button type="button" class="p-1.5 rounded-lg bg-white text-gray-700 hover:bg-gray-100" title="Principal" @click="setPrimary(i)">
             ⭐
           </button>
@@ -153,7 +309,7 @@ function triggerInput() {
             ✕
           </button>
         </div>
-        <span v-if="img.isPrimary" class="absolute top-1 left-1 px-2 py-0.5 bg-primary-500 text-white text-xs rounded-full">Principal</span>
+        <span v-if="img.isPrimary" class="absolute right-2 top-2 px-2 py-0.5 bg-primary-500 text-white text-xs rounded-full">Principal</span>
       </div>
     </div>
   </div>

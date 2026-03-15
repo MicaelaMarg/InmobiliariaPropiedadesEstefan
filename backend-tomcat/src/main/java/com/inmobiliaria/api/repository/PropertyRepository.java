@@ -277,7 +277,9 @@ public class PropertyRepository {
 
   private List<PropertyImage> findImages(Connection connection, long propertyId) throws SQLException {
     try (PreparedStatement statement = connection.prepareStatement("""
-      select url, display_order, is_primary
+      select url, thumbnail_url, medium_url, large_url, placeholder_url,
+             width, height, thumbnail_width, medium_width, large_width,
+             mime_type, original_name, display_order, is_primary
         from property_images
        where property_id = ?
        order by display_order asc, id asc
@@ -286,11 +288,7 @@ public class PropertyRepository {
       try (ResultSet rs = statement.executeQuery()) {
         List<PropertyImage> images = new ArrayList<>();
         while (rs.next()) {
-          PropertyImage image = new PropertyImage();
-          image.url = rs.getString("url");
-          image.order = getNullableInt(rs, "display_order");
-          image.isPrimary = rs.getBoolean("is_primary");
-          images.add(image);
+          images.add(mapImage(rs, true));
         }
         return images;
       }
@@ -321,7 +319,9 @@ public class PropertyRepository {
     }
 
     String sql = """
-      select property_id, url, display_order, is_primary
+      select property_id, url, thumbnail_url, medium_url, large_url, placeholder_url,
+             width, height, thumbnail_width, medium_width, large_width,
+             mime_type, original_name, display_order, is_primary
         from property_images
        where property_id in (%s)
        order by property_id asc, is_primary desc, display_order asc, id asc
@@ -340,14 +340,7 @@ public class PropertyRepository {
             continue;
           }
 
-          PropertyImage image = new PropertyImage();
-          image.url = rs.getString("url");
-          if (isInlineImage(image.url)) {
-            continue;
-          }
-          image.order = getNullableInt(rs, "display_order");
-          image.isPrimary = rs.getBoolean("is_primary");
-          property.images.add(image);
+          property.images.add(mapImage(rs, false));
         }
       }
     }
@@ -364,8 +357,12 @@ public class PropertyRepository {
     }
 
     try (PreparedStatement insertStmt = connection.prepareStatement("""
-      insert into property_images (property_id, url, display_order, is_primary)
-      values (?, ?, ?, ?)
+      insert into property_images (
+        property_id, url, thumbnail_url, medium_url, large_url, placeholder_url,
+        width, height, thumbnail_width, medium_width, large_width,
+        mime_type, original_name, display_order, is_primary
+      )
+      values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       """)) {
       for (int i = 0; i < images.size(); i++) {
         PropertyImage image = images.get(i);
@@ -374,12 +371,49 @@ public class PropertyRepository {
         }
         insertStmt.setLong(1, propertyId);
         insertStmt.setString(2, image.url);
-        insertStmt.setInt(3, image.order != null ? image.order : i);
-        insertStmt.setBoolean(4, Boolean.TRUE.equals(image.isPrimary) || i == 0);
+        insertStmt.setString(3, image.thumbnailUrl);
+        insertStmt.setString(4, image.mediumUrl);
+        insertStmt.setString(5, image.largeUrl);
+        insertStmt.setString(6, image.placeholderUrl);
+        insertStmt.setObject(7, image.width);
+        insertStmt.setObject(8, image.height);
+        insertStmt.setObject(9, image.thumbnailWidth);
+        insertStmt.setObject(10, image.mediumWidth);
+        insertStmt.setObject(11, image.largeWidth);
+        insertStmt.setString(12, image.mimeType);
+        insertStmt.setString(13, image.originalName);
+        insertStmt.setInt(14, image.order != null ? image.order : i);
+        insertStmt.setBoolean(15, Boolean.TRUE.equals(image.isPrimary) || i == 0);
         insertStmt.addBatch();
       }
       insertStmt.executeBatch();
     }
+  }
+
+  private PropertyImage mapImage(ResultSet rs, boolean includeLargeVariant) throws SQLException {
+    PropertyImage image = new PropertyImage();
+    String baseUrl = rs.getString("url");
+    String thumbnailUrl = rs.getString("thumbnail_url");
+    String mediumUrl = rs.getString("medium_url");
+    String largeUrl = rs.getString("large_url");
+
+    image.thumbnailUrl = thumbnailUrl;
+    image.mediumUrl = mediumUrl;
+    image.largeUrl = includeLargeVariant ? firstNotBlank(largeUrl, baseUrl) : null;
+    image.placeholderUrl = rs.getString("placeholder_url");
+    image.width = getNullableInt(rs, "width");
+    image.height = getNullableInt(rs, "height");
+    image.thumbnailWidth = getNullableInt(rs, "thumbnail_width");
+    image.mediumWidth = getNullableInt(rs, "medium_width");
+    image.largeWidth = getNullableInt(rs, "large_width");
+    image.mimeType = rs.getString("mime_type");
+    image.originalName = rs.getString("original_name");
+    image.order = getNullableInt(rs, "display_order");
+    image.isPrimary = rs.getBoolean("is_primary");
+    image.url = includeLargeVariant
+      ? firstNotBlank(baseUrl, largeUrl, mediumUrl, thumbnailUrl)
+      : firstNotBlank(mediumUrl, thumbnailUrl, baseUrl, largeUrl);
+    return image;
   }
 
   private void bindProperty(PreparedStatement statement, Property property) throws SQLException {
@@ -566,10 +600,6 @@ public class PropertyRepository {
     return value != null && !value.isBlank();
   }
 
-  private static boolean isInlineImage(String value) {
-    return value != null && value.startsWith("data:image/");
-  }
-
   private static String defaultIfBlank(String value, String fallback) {
     return notBlank(value) ? value : fallback;
   }
@@ -584,6 +614,15 @@ public class PropertyRepository {
   private static String pick(String... values) {
     for (String value : values) {
       if (value != null) {
+        return value;
+      }
+    }
+    return null;
+  }
+
+  private static String firstNotBlank(String... values) {
+    for (String value : values) {
+      if (notBlank(value)) {
         return value;
       }
     }
