@@ -1,4 +1,7 @@
+import { API_BASE_URL } from '../config/api'
+
 const FALLBACK_URL = 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=1200'
+const API_ORIGIN = API_BASE_URL ? API_BASE_URL.replace(/\/api$/, '') : ''
 
 const VARIANT_URL_FIELDS = {
   thumbnail: 'thumbnailUrl',
@@ -15,6 +18,14 @@ const VARIANT_WIDTH_FIELDS = {
 function toNumber(value) {
   const numeric = Number(value)
   return Number.isFinite(numeric) && numeric > 0 ? numeric : null
+}
+
+function resolveImageReference(url) {
+  if (!url) return null
+  if (/^(data:|blob:|https?:)/i.test(url)) return url
+  if (url.startsWith('//')) return url
+  if (url.startsWith('/')) return API_ORIGIN ? `${API_ORIGIN}${url}` : url
+  return url
 }
 
 export function createFallbackImage() {
@@ -50,18 +61,18 @@ export function getImageUrl(image, variant = 'large') {
   if (!image) return FALLBACK_URL
 
   if (variant === 'thumbnail') {
-    return image.thumbnailUrl || image.mediumUrl || image.largeUrl || image.url || FALLBACK_URL
+    return resolveImageReference(image.thumbnailUrl || image.mediumUrl || image.largeUrl || image.url) || FALLBACK_URL
   }
 
   if (variant === 'medium') {
-    return image.mediumUrl || image.largeUrl || image.url || image.thumbnailUrl || FALLBACK_URL
+    return resolveImageReference(image.mediumUrl || image.largeUrl || image.url || image.thumbnailUrl) || FALLBACK_URL
   }
 
-  return image.largeUrl || image.url || image.mediumUrl || image.thumbnailUrl || FALLBACK_URL
+  return resolveImageReference(image.largeUrl || image.url || image.mediumUrl || image.thumbnailUrl) || FALLBACK_URL
 }
 
 export function getImagePlaceholder(image) {
-  return image?.placeholderUrl || null
+  return resolveImageReference(image?.placeholderUrl) || null
 }
 
 export function getImageDimensions(image) {
@@ -80,7 +91,7 @@ export function buildImageSrcSet(image, variants = ['thumbnail', 'medium', 'larg
   variants.forEach((variant) => {
     const urlField = VARIANT_URL_FIELDS[variant]
     const widthField = VARIANT_WIDTH_FIELDS[variant]
-    const url = urlField ? image[urlField] : null
+    const url = urlField ? resolveImageReference(image[urlField]) : null
     const width = widthField ? toNumber(image[widthField]) : null
 
     if (url && width && !usedUrls.has(url)) {
@@ -89,7 +100,7 @@ export function buildImageSrcSet(image, variants = ['thumbnail', 'medium', 'larg
     }
   })
 
-  const fallbackUrl = image.largeUrl || image.url
+  const fallbackUrl = resolveImageReference(image.largeUrl || image.url)
   const fallbackWidth = toNumber(image.largeWidth) || toNumber(image.width)
   if (fallbackUrl && fallbackWidth && !usedUrls.has(fallbackUrl)) {
     sources.push(`${fallbackUrl} ${fallbackWidth}w`)

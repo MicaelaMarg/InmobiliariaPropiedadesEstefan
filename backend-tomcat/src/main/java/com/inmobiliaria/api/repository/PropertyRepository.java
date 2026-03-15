@@ -3,6 +3,8 @@ package com.inmobiliaria.api.repository;
 import com.google.gson.reflect.TypeToken;
 import com.inmobiliaria.api.model.Property;
 import com.inmobiliaria.api.model.PropertyImage;
+import com.inmobiliaria.api.model.PropertyImageAsset;
+import com.inmobiliaria.api.util.DataUrlUtil;
 import com.inmobiliaria.api.util.JsonUtil;
 import com.inmobiliaria.api.util.SlugUtils;
 import java.lang.reflect.Type;
@@ -100,7 +102,7 @@ public class PropertyRepository {
     pagedParams.add(offset);
 
     PublicPropertyPage result = new PublicPropertyPage();
-    result.items = query(sql.toString(), pagedParams, false);
+    result.items = query(sql.toString(), pagedParams, false, true);
     result.total = total;
     result.page = normalizedPage;
     result.limit = normalizedLimit;
@@ -135,11 +137,11 @@ public class PropertyRepository {
     }
 
     sql.append(" order by id desc");
-    return query(sql.toString(), params, false);
+    return query(sql.toString(), params, false, false);
   }
 
   public Property findById(long id) throws SQLException {
-    List<Property> properties = query(BASE_SELECT + " where id = ?", List.of(id), true);
+    List<Property> properties = query(BASE_SELECT + " where id = ?", List.of(id), true, false);
     return properties.isEmpty() ? null : properties.get(0);
   }
 
@@ -147,6 +149,7 @@ public class PropertyRepository {
     List<Property> properties = query(
       BASE_SELECT + " where slug = ? and is_published = true and status = 'available'",
       List.of(slug),
+      true,
       true
     );
     return properties.isEmpty() ? null : properties.get(0);
@@ -219,7 +222,49 @@ public class PropertyRepository {
     }
   }
 
-  private List<Property> query(String sql, List<Object> params, boolean includeAllImages) throws SQLException {
+  public PropertyImageAsset findPublicImageAsset(long imageId, String variant) throws SQLException {
+    String normalizedVariant = normalizeImageVariant(variant);
+
+    try (Connection connection = Database.getConnection();
+         PreparedStatement statement = connection.prepareStatement("""
+           select pi.url, pi.thumbnail_url, pi.medium_url, pi.large_url, pi.placeholder_url
+             from property_images pi
+             join properties p on p.id = pi.property_id
+            where pi.id = ?
+              and p.is_published = true
+              and p.status = 'available'
+           """)) {
+      statement.setLong(1, imageId);
+
+      try (ResultSet rs = statement.executeQuery()) {
+        if (!rs.next()) {
+          return null;
+        }
+
+        String value = resolveVariantValue(
+          normalizedVariant,
+          rs.getString("url"),
+          rs.getString("thumbnail_url"),
+          rs.getString("medium_url"),
+          rs.getString("large_url"),
+          rs.getString("placeholder_url")
+        );
+
+        if (!notBlank(value) || !DataUrlUtil.isDataUrl(value)) {
+          return null;
+        }
+
+        DataUrlUtil.DecodedDataUrl decoded = DataUrlUtil.decode(value);
+        PropertyImageAsset asset = new PropertyImageAsset();
+        asset.bytes = decoded.bytes();
+        asset.contentType = decoded.contentType();
+        asset.cacheKey = imageId + ":" + normalizedVariant;
+        return asset;
+      }
+    }
+  }
+
+  private List<Property> query(String sql, List<Object> params, boolean includeAllImages, boolean publicAssetUrls) throws SQLException {
     try (Connection connection = Database.getConnection();
          PreparedStatement statement = connection.prepareStatement(sql)) {
       bindParams(statement, params);
@@ -229,7 +274,7 @@ public class PropertyRepository {
           Property property = mapProperty(rs);
           result.add(property);
         }
-        attachImages(connection, result, includeAllImages);
+        attachImages(connection, result, includeAllImages, publicAssetUrls);
         return result;
       }
     }
@@ -278,6 +323,7 @@ public class PropertyRepository {
   private List<PropertyImage> findImages(Connection connection, long propertyId) throws SQLException {
     try (PreparedStatement statement = connection.prepareStatement("""
       select url, thumbnail_url, medium_url, large_url, placeholder_url,
+             id,
              width, height, thumbnail_width, medium_width, large_width,
              mime_type, original_name, display_order, is_primary
         from property_images
@@ -288,14 +334,14 @@ public class PropertyRepository {
       try (ResultSet rs = statement.executeQuery()) {
         List<PropertyImage> images = new ArrayList<>();
         while (rs.next()) {
-          images.add(mapImage(rs, true));
+          images.add(mapImage(rs, true, false));
         }
         return images;
       }
     }
   }
 
-  private void attachImages(Connection connection, List<Property> properties, boolean includeAllImages) throws SQLException {
+  private void attachImages(Connection connection, List<Property> properties, boolean includeAllImages, boolean publicAssetUrls) throws SQLException {
     if (properties == null || properties.isEmpty()) {
       return;
     }
@@ -303,14 +349,17 @@ public class PropertyRepository {
     if (includeAllImages) {
       for (Property property : properties) {
         property.images = findImages(connection, Long.parseLong(property.id));
+        if (publicAssetUrls) {
+          property.images.replaceAll(image -> toPublicImage(image, true));
+        }
       }
       return;
     }
 
-    attachPrimaryImages(connection, properties);
+    attachPrimaryImages(connection, properties, publicAssetUrls);
   }
 
-  private void attachPrimaryImages(Connection connection, List<Property> properties) throws SQLException {
+  private void attachPrimaryImages(Connection connection, List<Property> properties, boolean publicAssetUrls) throws SQLException {
     String placeholders = String.join(", ", Collections.nCopies(properties.size(), "?"));
     Map<Long, Property> propertiesById = new HashMap<>();
     for (Property property : properties) {
@@ -319,7 +368,7 @@ public class PropertyRepository {
     }
 
     String sql = """
-      select property_id, url, thumbnail_url, medium_url, large_url, placeholder_url,
+      select property_id, id, url, thumbnail_url, medium_url, large_url, placeholder_url,
              width, height, thumbnail_width, medium_width, large_width,
              mime_type, original_name, display_order, is_primary
         from property_images
@@ -340,7 +389,7 @@ public class PropertyRepository {
             continue;
           }
 
-          property.images.add(mapImage(rs, false));
+          property.images.add(mapImage(rs, false, publicAssetUrls));
         }
       }
     }
@@ -390,19 +439,28 @@ public class PropertyRepository {
     }
   }
 
-  private PropertyImage mapImage(ResultSet rs, boolean includeLargeVariant) throws SQLException {
+  private PropertyImage mapImage(ResultSet rs, boolean includeLargeVariant, boolean publicAssetUrls) throws SQLException {
     PropertyImage image = new PropertyImage();
+    image.id = String.valueOf(rs.getLong("id"));
     String baseUrl = rs.getString("url");
     String thumbnailUrl = rs.getString("thumbnail_url");
     String largeUrl = rs.getString("large_url");
     String mediumUrl = rs.getString("medium_url");
+    String placeholderUrl = rs.getString("placeholder_url");
     String resolvedThumbnailUrl = firstNotBlank(thumbnailUrl, mediumUrl, baseUrl, largeUrl);
     String resolvedLargeUrl = firstNotBlank(largeUrl, baseUrl, mediumUrl, thumbnailUrl);
+    String resolvedMediumUrl = firstNotBlank(mediumUrl, largeUrl, baseUrl, thumbnailUrl);
 
-    image.thumbnailUrl = includeLargeVariant ? resolvedThumbnailUrl : null;
-    image.mediumUrl = null;
-    image.largeUrl = includeLargeVariant ? resolvedLargeUrl : null;
-    image.placeholderUrl = rs.getString("placeholder_url");
+    image.thumbnailUrl = includeLargeVariant || publicAssetUrls
+      ? resolvePublicImageReference(image.id, "thumbnail", resolvedThumbnailUrl, publicAssetUrls)
+      : null;
+    image.mediumUrl = includeLargeVariant
+      ? resolvePublicImageReference(image.id, "medium", mediumUrl != null ? resolvedMediumUrl : null, publicAssetUrls)
+      : null;
+    image.largeUrl = includeLargeVariant
+      ? resolvePublicImageReference(image.id, "large", resolvedLargeUrl, publicAssetUrls)
+      : null;
+    image.placeholderUrl = resolvePublicImageReference(image.id, "placeholder", placeholderUrl, publicAssetUrls);
     image.width = getNullableInt(rs, "width");
     image.height = getNullableInt(rs, "height");
     image.thumbnailWidth = getNullableInt(rs, "thumbnail_width");
@@ -413,9 +471,78 @@ public class PropertyRepository {
     image.order = getNullableInt(rs, "display_order");
     image.isPrimary = rs.getBoolean("is_primary");
     image.url = includeLargeVariant
-      ? resolvedLargeUrl
-      : resolvedThumbnailUrl;
+      ? resolvePublicImageReference(image.id, "large", resolvedLargeUrl, publicAssetUrls)
+      : resolvePublicImageReference(image.id, "thumbnail", resolvedThumbnailUrl, publicAssetUrls);
     return image;
+  }
+
+  private PropertyImage toPublicImage(PropertyImage image, boolean includeLargeVariant) {
+    if (image == null) {
+      return null;
+    }
+
+    PropertyImage publicImage = new PropertyImage();
+    publicImage.id = image.id;
+    publicImage.url = includeLargeVariant
+      ? resolvePublicImageReference(image.id, "large", image.url, true)
+      : resolvePublicImageReference(image.id, "thumbnail", image.url, true);
+    publicImage.thumbnailUrl = includeLargeVariant
+      ? resolvePublicImageReference(image.id, "thumbnail", image.thumbnailUrl, true)
+      : null;
+    publicImage.mediumUrl = includeLargeVariant
+      ? resolvePublicImageReference(image.id, "medium", image.mediumUrl, true)
+      : null;
+    publicImage.largeUrl = includeLargeVariant
+      ? resolvePublicImageReference(image.id, "large", image.largeUrl, true)
+      : null;
+    publicImage.placeholderUrl = resolvePublicImageReference(image.id, "placeholder", image.placeholderUrl, true);
+    publicImage.width = image.width;
+    publicImage.height = image.height;
+    publicImage.thumbnailWidth = image.thumbnailWidth;
+    publicImage.mediumWidth = image.mediumWidth;
+    publicImage.largeWidth = image.largeWidth;
+    publicImage.mimeType = image.mimeType;
+    publicImage.originalName = image.originalName;
+    publicImage.order = image.order;
+    publicImage.isPrimary = image.isPrimary;
+    return publicImage;
+  }
+
+  private String resolvePublicImageReference(String imageId, String variant, String rawValue, boolean publicAssetUrls) {
+    if (!notBlank(rawValue)) {
+      return null;
+    }
+    if (!publicAssetUrls || !notBlank(imageId) || !DataUrlUtil.isDataUrl(rawValue)) {
+      return rawValue;
+    }
+    return buildPublicImageUrl(imageId, variant);
+  }
+
+  private String buildPublicImageUrl(String imageId, String variant) {
+    return "/api/public/images/" + imageId + "?variant=" + variant;
+  }
+
+  private String normalizeImageVariant(String variant) {
+    if ("thumbnail".equalsIgnoreCase(variant)) return "thumbnail";
+    if ("medium".equalsIgnoreCase(variant)) return "medium";
+    if ("placeholder".equalsIgnoreCase(variant)) return "placeholder";
+    return "large";
+  }
+
+  private String resolveVariantValue(
+    String variant,
+    String baseUrl,
+    String thumbnailUrl,
+    String mediumUrl,
+    String largeUrl,
+    String placeholderUrl
+  ) {
+    return switch (variant) {
+      case "thumbnail" -> firstNotBlank(thumbnailUrl, mediumUrl, baseUrl, largeUrl);
+      case "medium" -> firstNotBlank(mediumUrl, largeUrl, baseUrl, thumbnailUrl);
+      case "placeholder" -> placeholderUrl;
+      default -> firstNotBlank(largeUrl, baseUrl, mediumUrl, thumbnailUrl);
+    };
   }
 
   private void bindProperty(PreparedStatement statement, Property property) throws SQLException {
