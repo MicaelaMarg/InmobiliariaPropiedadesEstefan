@@ -101,15 +101,17 @@ function onTouchEnd(event) {
             :aria-label="`Abrir galería de ${alt}`"
             @click="openLightbox"
           >
-            <ResponsiveImage
-              :image="currentImage"
-              :alt="`${alt} ${currentIndex + 1}`"
-              variant="large"
-              sizes="(min-width: 1280px) 960px, 100vw"
-              :eager="true"
-              :contain="true"
-              class="min-h-[320px] w-full md:min-h-[560px]"
-            />
+            <div class="mx-auto flex h-[260px] w-full max-w-4xl items-center justify-center sm:h-[320px] md:h-[380px] lg:h-[430px]">
+              <ResponsiveImage
+                :image="currentImage"
+                :alt="`${alt} ${currentIndex + 1}`"
+                variant="large"
+                sizes="(min-width: 1280px) 880px, 100vw"
+                :eager="true"
+                :contain="true"
+                class="h-full w-full"
+              />
+            </div>
           </button>
         </div>
       </div>
