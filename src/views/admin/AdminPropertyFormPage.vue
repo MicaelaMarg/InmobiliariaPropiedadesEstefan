@@ -113,7 +113,7 @@ async function save() {
         ...img,
         url: img.largeUrl || img.url || img.mediumUrl || img.thumbnailUrl || '',
         thumbnailUrl: img.thumbnailUrl || img.mediumUrl || img.url || '',
-        mediumUrl: img.mediumUrl || img.largeUrl || img.url || img.thumbnailUrl || '',
+        mediumUrl: img.mediumUrl || null,
         largeUrl: img.largeUrl || img.url || img.mediumUrl || img.thumbnailUrl || '',
         placeholderUrl: img.placeholderUrl || null,
         order: i,

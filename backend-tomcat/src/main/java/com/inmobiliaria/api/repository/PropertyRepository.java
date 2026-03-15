@@ -394,25 +394,27 @@ public class PropertyRepository {
     PropertyImage image = new PropertyImage();
     String baseUrl = rs.getString("url");
     String thumbnailUrl = rs.getString("thumbnail_url");
-    String mediumUrl = rs.getString("medium_url");
     String largeUrl = rs.getString("large_url");
+    String mediumUrl = rs.getString("medium_url");
+    String resolvedThumbnailUrl = firstNotBlank(thumbnailUrl, mediumUrl, baseUrl, largeUrl);
+    String resolvedLargeUrl = firstNotBlank(largeUrl, baseUrl, mediumUrl, thumbnailUrl);
 
-    image.thumbnailUrl = thumbnailUrl;
-    image.mediumUrl = mediumUrl;
-    image.largeUrl = includeLargeVariant ? firstNotBlank(largeUrl, baseUrl) : null;
+    image.thumbnailUrl = includeLargeVariant ? resolvedThumbnailUrl : null;
+    image.mediumUrl = null;
+    image.largeUrl = includeLargeVariant ? resolvedLargeUrl : null;
     image.placeholderUrl = rs.getString("placeholder_url");
     image.width = getNullableInt(rs, "width");
     image.height = getNullableInt(rs, "height");
     image.thumbnailWidth = getNullableInt(rs, "thumbnail_width");
-    image.mediumWidth = getNullableInt(rs, "medium_width");
+    image.mediumWidth = null;
     image.largeWidth = getNullableInt(rs, "large_width");
     image.mimeType = rs.getString("mime_type");
     image.originalName = rs.getString("original_name");
     image.order = getNullableInt(rs, "display_order");
     image.isPrimary = rs.getBoolean("is_primary");
     image.url = includeLargeVariant
-      ? firstNotBlank(baseUrl, largeUrl, mediumUrl, thumbnailUrl)
-      : firstNotBlank(mediumUrl, thumbnailUrl, baseUrl, largeUrl);
+      ? resolvedLargeUrl
+      : resolvedThumbnailUrl;
     return image;
   }
 

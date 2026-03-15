@@ -11,10 +11,9 @@ const emit = defineEmits(['update:modelValue'])
 const input = ref(null)
 const uploading = ref(false)
 const IMAGE_DIMENSIONS = {
-  thumbnail: 420,
-  medium: 960,
-  large: 1680,
-  placeholder: 32,
+  thumbnail: 320,
+  large: 1440,
+  placeholder: 24,
 }
 let preferredMimeTypePromise = null
 
@@ -34,7 +33,7 @@ function normalizeStoredImage(image = {}) {
     ...image,
     url: image.url || image.largeUrl || image.mediumUrl || image.thumbnailUrl || '',
     thumbnailUrl: image.thumbnailUrl || image.mediumUrl || image.url || '',
-    mediumUrl: image.mediumUrl || image.largeUrl || image.url || image.thumbnailUrl || '',
+    mediumUrl: image.mediumUrl || null,
     largeUrl: image.largeUrl || image.url || image.mediumUrl || image.thumbnailUrl || '',
     placeholderUrl: image.placeholderUrl || null,
     width: image.width ?? null,
@@ -53,7 +52,7 @@ function serializeImage(image = {}, index = 0) {
   return {
     url: image.largeUrl || image.url || image.mediumUrl || image.thumbnailUrl || '',
     thumbnailUrl: image.thumbnailUrl || image.mediumUrl || image.url || '',
-    mediumUrl: image.mediumUrl || image.largeUrl || image.url || image.thumbnailUrl || '',
+    mediumUrl: image.mediumUrl || null,
     largeUrl: image.largeUrl || image.url || image.mediumUrl || image.thumbnailUrl || '',
     placeholderUrl: image.placeholderUrl || null,
     width: image.width ?? null,
@@ -163,12 +162,11 @@ async function fileToOptimizedImage(file) {
   const image = await loadImage(file)
   const mimeType = await getPreferredMimeType()
   const quality = mimeType === 'image/webp'
-    ? { thumbnail: 0.72, medium: 0.78, large: 0.84 }
-    : { thumbnail: 0.74, medium: 0.8, large: 0.86 }
+    ? { thumbnail: 0.64, large: 0.76 }
+    : { thumbnail: 0.68, large: 0.8 }
 
-  const [thumbnail, medium, large, placeholder] = await Promise.all([
+  const [thumbnail, large, placeholder] = await Promise.all([
     createVariant(image, IMAGE_DIMENSIONS.thumbnail, mimeType, quality.thumbnail),
-    createVariant(image, IMAGE_DIMENSIONS.medium, mimeType, quality.medium),
     createVariant(image, IMAGE_DIMENSIONS.large, mimeType, quality.large),
     createVariant(image, IMAGE_DIMENSIONS.placeholder, 'image/jpeg', 0.45),
   ])
@@ -178,13 +176,13 @@ async function fileToOptimizedImage(file) {
     return normalizeStoredImage({
       url,
       thumbnailUrl: url,
-      mediumUrl: url,
+      mediumUrl: null,
       largeUrl: url,
       placeholderUrl: url,
       width: image.width,
       height: image.height,
       thumbnailWidth: image.width,
-      mediumWidth: image.width,
+      mediumWidth: null,
       largeWidth: image.width,
       mimeType: file.type || 'image/jpeg',
       originalName: file.name,
@@ -193,14 +191,14 @@ async function fileToOptimizedImage(file) {
 
   return normalizeStoredImage({
     url: large.dataUrl,
-    thumbnailUrl: thumbnail.dataUrl || medium.dataUrl || large.dataUrl,
-    mediumUrl: medium.dataUrl || large.dataUrl,
+    thumbnailUrl: thumbnail.dataUrl || large.dataUrl,
+    mediumUrl: null,
     largeUrl: large.dataUrl,
     placeholderUrl: placeholder.dataUrl || null,
     width: image.width,
     height: image.height,
     thumbnailWidth: thumbnail.width,
-    mediumWidth: medium.width,
+    mediumWidth: null,
     largeWidth: large.width,
     mimeType,
     originalName: file.name,
