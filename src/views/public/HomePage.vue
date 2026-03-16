@@ -9,9 +9,7 @@ const router = useRouter()
 const featured = ref([])
 const loading = ref(true)
 const googleReviewsUrl = 'https://maps.app.goo.gl/j8Vnf6GnBffEAH9g6'
-const HERO_IMAGE_SRC = '/images/branding/IMG_3241_1_11zon.jpg'
-const HERO_IMAGE_FALLBACK_SRC = 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=1920'
-const heroImageSrc = ref(HERO_IMAGE_SRC)
+const HERO_VIDEO_SRC = '/images/branding/inmobiliariaafuera.webm'
 
 const testimonials = [
   {
@@ -81,11 +79,6 @@ function goContact() {
   router.push({ name: 'Contact' })
 }
 
-function handleHeroImageError() {
-  if (heroImageSrc.value !== HERO_IMAGE_FALLBACK_SRC) {
-    heroImageSrc.value = HERO_IMAGE_FALLBACK_SRC
-  }
-}
 </script>
 
 <template>
@@ -116,13 +109,17 @@ function handleHeroImageError() {
         </div>
 
         <div class="relative bg-slate-100 ring-1 ring-slate-200/80">
-          <img
-            :src="heroImageSrc"
-            alt="Imagen principal de Erika M. Estefan Propiedades"
+          <video
             class="h-full min-h-[320px] w-full object-cover object-center lg:min-h-[78vh]"
-            loading="eager"
-            @error="handleHeroImageError"
-          />
+            autoplay
+            muted
+            loop
+            playsinline
+            preload="metadata"
+            aria-label="Video principal de Erika M. Estefan Propiedades"
+          >
+            <source :src="HERO_VIDEO_SRC" type="video/webm" />
+          </video>
           <div class="pointer-events-none absolute inset-y-0 left-0 hidden w-44 bg-gradient-to-r from-black/75 via-black/35 to-transparent lg:block" />
         </div>
       </div>

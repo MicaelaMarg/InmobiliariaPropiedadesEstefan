@@ -6,10 +6,14 @@ import { useAppStore } from '../../stores/app'
 const router = useRouter()
 const mobileMenuOpen = ref(false)
 const logoError = ref(false)
-const logoSrc = ref('/images/branding/logo-erika-estefan-real.png')
+const logoSrc = ref('/images/branding/logoinmobiliaria.webp')
 const app = useAppStore()
 
 function onLogoError() {
+  if (logoSrc.value.endsWith('.webp')) {
+    logoSrc.value = '/images/branding/logo-erika-estefan-real.png'
+    return
+  }
   if (logoSrc.value.endsWith('.png')) {
     logoSrc.value = '/images/branding/logo-erika-estefan.svg'
     return
@@ -25,20 +29,20 @@ function navTo(path) {
 
 <template>
   <header class="bg-[#003820] shadow-card sticky top-0 z-50">
-    <div class="max-w-7xl mx-auto pl-0 pr-2 sm:pl-1 sm:pr-4 lg:pl-2 lg:pr-6">
+    <div class="w-full px-3 sm:px-4 lg:px-6">
       <div class="flex items-center justify-between h-16 md:h-[88px] gap-4">
-        <router-link to="/" class="flex items-center min-w-0 flex-1 gap-3 text-white transition-colors">
-          <span class="flex items-center justify-center flex-shrink-0 self-center">
+        <router-link to="/" class="flex items-center gap-3 text-white transition-colors">
+          <span class="h-14 w-14 sm:h-16 sm:w-16 md:h-18 md:w-18 lg:h-20 lg:w-20 rounded-full bg-white/30 ring-2 ring-emerald-300/90 shadow-xl overflow-hidden flex items-center justify-center">
             <img
               v-if="!logoError"
               :src="logoSrc"
               alt="Erika M. Estefan Propiedades"
-              class="h-10 sm:h-11 md:h-12 lg:h-14 w-auto object-contain"
+              class="h-full w-full object-cover"
               @error="onLogoError"
             />
             <span v-else class="text-xs font-semibold text-white">Logo</span>
           </span>
-          <span class="min-w-0 truncate text-sm sm:text-base md:text-lg lg:text-xl font-semibold tracking-tight leading-none">
+          <span class="min-w-0 truncate text-sm sm:text-base md:text-lg lg:text-xl font-semibold tracking-tight leading-none ml-1 sm:ml-2">
             {{ app.settings.businessName }}
           </span>
         </router-link>
