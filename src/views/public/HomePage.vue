@@ -94,7 +94,7 @@ function goContact() {
               Encontrá tu próximo hogar o inversión
             </h1>
             <p class="mt-5 text-lg text-emerald-50 md:text-xl">
-              Propiedades, lotes y fondos de comercio. Asesoramiento profesional para venta y alquiler.
+              Asesoramiento profesional.
             </p>
             <div class="mt-8 flex flex-wrap gap-4">
               <button type="button" class="rounded-xl bg-white px-6 py-3 text-base font-semibold text-emerald-800 transition hover:bg-emerald-50" @click="goCatalog">

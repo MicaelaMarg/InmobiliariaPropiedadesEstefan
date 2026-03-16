@@ -4,7 +4,7 @@ import { useAppStore } from '../../stores/app'
 
 const app = useAppStore()
 const settings = app.settings
-const valuationImageSrc = '/images/imagen-hero.png'
+const valuationImageSrc = '/images/imagen-hero-optimized.jpg'
 
 const form = ref({
   name: '',
