@@ -121,8 +121,8 @@ const contactItems = [
   },
   {
     title: 'Horario de atencion',
-    text: '09:00 a 19:00 hs',
-    subtext: 'Lunes a viernes',
+    text: 'Lunes a viernes de 09:00 a 19:00 hs · Sabados de 09:00 a 13:00 hs',
+    subtext: 'Horarios sujetos a cambios.',
     icon: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z',
   },
 ]
