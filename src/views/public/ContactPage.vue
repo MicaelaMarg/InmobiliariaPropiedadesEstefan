@@ -1,4 +1,5 @@
 <script setup>
+import { nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useAppStore } from '../../stores/app'
 import ContactForm from '../../components/contact/ContactForm.vue'
 
@@ -6,7 +7,102 @@ const app = useAppStore()
 const settings = app.settings
 const whatsappUrl = `https://wa.me/${settings.whatsapp.replace(/\D/g, '')}`
 const mapSrc = 'https://www.google.com/maps?q=Acapulco+79,+Santa+Clara+del+Mar,+Buenos+Aires,+Argentina&z=16&output=embed'
-const contactHeroImageSrc = '/images/branding/fotoContacto.jpeg'
+const contactHeroSlides = [
+  {
+    type: 'image',
+    src: '/images/branding/fotoContacto.jpeg',
+    alt: 'Atención personalizada de Erika M. Estefan Propiedades',
+  },
+  {
+    type: 'image',
+    src: '/images/imagen-hero.png',
+    alt: 'Propiedad destacada para contacto inmobiliario',
+  },
+  {
+    type: 'image',
+    src: '/images/branding/IMG_3241_1_11zon.jpg',
+    alt: 'Interior de propiedad para consultas inmobiliarias',
+  },
+  {
+    type: 'video',
+    src: '/images/branding/adentro1.webm',
+    poster: '/images/branding/fotoContacto.jpeg',
+    alt: 'Video interior de propiedad',
+  },
+  {
+    type: 'image',
+    src: '/images/branding/fotoContacto.jpeg',
+    alt: 'Contacto directo con Erika M. Estefan Propiedades',
+  },
+]
+const currentContactSlide = ref(0)
+const contactVideoRefs = ref({})
+let contactCarouselTimer = null
+const CONTACT_IMAGE_DURATION = 5000
+const CONTACT_VIDEO_DURATION = 10000
+
+function getContactSlideDuration(index) {
+  return contactHeroSlides[index]?.type === 'video'
+    ? CONTACT_VIDEO_DURATION
+    : CONTACT_IMAGE_DURATION
+}
+
+function startContactCarousel() {
+  stopContactCarousel()
+  contactCarouselTimer = setTimeout(() => {
+    currentContactSlide.value = (currentContactSlide.value + 1) % contactHeroSlides.length
+  }, getContactSlideDuration(currentContactSlide.value))
+}
+
+function stopContactCarousel() {
+  if (contactCarouselTimer) {
+    clearTimeout(contactCarouselTimer)
+    contactCarouselTimer = null
+  }
+}
+
+function goToContactSlide(index) {
+  currentContactSlide.value = index
+  startContactCarousel()
+}
+
+onMounted(() => {
+  startContactCarousel()
+})
+
+onBeforeUnmount(() => {
+  stopContactCarousel()
+})
+
+watch(currentContactSlide, async (index) => {
+  startContactCarousel()
+
+  if (contactHeroSlides[index]?.type !== 'video') {
+    return
+  }
+
+  await nextTick()
+  const video = contactVideoRefs.value[index]
+  if (!video) {
+    return
+  }
+
+  try {
+    video.currentTime = 0
+    video.playbackRate = 0.75
+    await video.play()
+  } catch {
+    // Ignoramos bloqueos de autoplay del navegador.
+  }
+})
+
+function setContactVideoRef(index, el) {
+  if (el) {
+    contactVideoRefs.value[index] = el
+  } else {
+    delete contactVideoRefs.value[index]
+  }
+}
 
 const contactItems = [
   {
@@ -42,25 +138,58 @@ const contactItems = [
   <section class="bg-gradient-to-b from-emerald-50 via-white to-white">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14 md:py-20">
       <div class="mb-10 overflow-hidden rounded-[30px] bg-white shadow-[0_24px_60px_rgba(15,23,42,0.08)] ring-1 ring-emerald-100 md:mb-14">
-        <div class="grid lg:grid-cols-2">
-          <div class="relative bg-slate-100">
-            <img
-              :src="contactHeroImageSrc"
-              alt="Imagen de contacto de Erika M. Estefan Propiedades"
-              class="h-full min-h-[280px] w-full object-cover object-center lg:min-h-[420px]"
-              loading="eager"
-            />
+        <div class="grid lg:grid-cols-[1.15fr_0.85fr]">
+          <div class="relative bg-gradient-to-br from-emerald-950 via-emerald-800 to-emerald-500">
+            <template v-for="(slide, index) in contactHeroSlides" :key="`${slide.type}-${slide.src}-${index}`">
+              <img
+                v-if="slide.type === 'image'"
+                :src="slide.src"
+                :alt="slide.alt"
+                class="absolute inset-0 h-full min-h-[280px] w-full object-cover object-center transition-opacity duration-700 lg:min-h-[420px]"
+                :class="currentContactSlide === index ? 'opacity-100' : 'opacity-0'"
+                loading="eager"
+              />
+              <video
+                v-else
+                :ref="(el) => setContactVideoRef(index, el)"
+                class="absolute inset-0 h-full min-h-[280px] w-full object-contain object-center transition-opacity duration-700 lg:min-h-[420px]"
+                :class="currentContactSlide === index ? 'opacity-100' : 'opacity-0'"
+                :poster="slide.poster"
+                autoplay
+                muted
+                loop
+                playsinline
+                preload="auto"
+                @loadedmetadata="$event.target.playbackRate = 0.75"
+              >
+                <source :src="slide.src" type="video/webm" />
+              </video>
+            </template>
             <div class="pointer-events-none absolute inset-0 bg-[linear-gradient(115deg,rgba(2,6,23,0.10)_0%,rgba(2,6,23,0.03)_48%,rgba(2,6,23,0.10)_100%)]" />
+            <div class="absolute bottom-4 left-1/2 z-10 flex -translate-x-1/2 items-center gap-2 rounded-full bg-slate-950/35 px-3 py-2 backdrop-blur-sm">
+              <button
+                v-for="(_, index) in contactHeroSlides"
+                :key="`dot-${index}`"
+                type="button"
+                class="h-2.5 rounded-full transition-all"
+                :class="currentContactSlide === index ? 'w-6 bg-white' : 'w-2.5 bg-white/55 hover:bg-white/80'"
+                :aria-label="`Ir a slide ${index + 1}`"
+                @click="goToContactSlide(index)"
+              />
+            </div>
           </div>
 
           <div class="relative flex items-center bg-gradient-to-br from-emerald-950 via-emerald-800 to-emerald-400 px-6 py-12 text-white sm:px-10 lg:px-14 lg:py-16">
             <div class="max-w-2xl">
-              <p class="mb-3 text-sm font-semibold uppercase tracking-[0.28em] text-emerald-100/90">Contacto</p>
+              <p class="mb-3 text-sm font-semibold uppercase tracking-[0.28em] text-emerald-100/90">Nosotros</p>
               <h1 class="text-3xl font-bold leading-tight md:text-5xl">
-                Contacto directo para consultas, tasas y oportunidades inmobiliarias
+                
               </h1>
               <p class="mt-5 text-base leading-8 text-emerald-50 md:text-lg">
-                Un espacio claro y profesional para que puedas comunicarte con Erika M. Estefan Propiedades por el medio que te resulte más cómodo.
+                Nos caracterizamos por ser una empresa seria, cumpliendo con los más altos regímenes de calidad en servicio y trato con nuestros clientes.
+              </p>
+              <p class="mt-4 text-base leading-8 text-emerald-100/95 md:text-lg">
+                Logrando así un posicionamiento de excelencia y compromiso. Hoy en día, ya con cientos operaciones concretadas, nos hemos propuesto llegar más alla, brindando mediante esta Web, operaciones en tiempo real, apuntaladas a la base de nuestras raíces iniciales: servicio y honestidad.
               </p>
             </div>
             <div class="pointer-events-none absolute inset-y-0 -left-16 hidden w-40 bg-gradient-to-l from-emerald-700/90 via-emerald-400/45 to-transparent blur-2xl lg:block" />
