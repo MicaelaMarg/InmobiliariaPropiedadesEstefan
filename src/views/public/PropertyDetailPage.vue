@@ -189,15 +189,13 @@ onMounted(async () => {
   <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <LoadingSpinner v-if="loading" />
     <template v-else-if="property">
-      <PropertyGallery :images="property.images" :alt="property.title" class="mb-8" />
-
       <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-6">
         <div>
-          <span class="text-sm font-medium text-primary-600 uppercase tracking-wide">{{ typeLabel }}</span>
+          <span class="text-sm font-medium uppercase tracking-wide text-[#0b5b38]">{{ typeLabel }}</span>
           <h1 class="text-2xl md:text-3xl font-bold text-gray-900 mt-1">{{ property.title }}</h1>
           <p class="text-gray-500 mt-1">{{ property.location }}</p>
         </div>
-        <div class="text-2xl font-bold text-primary-600">{{ priceText }}</div>
+        <div class="text-2xl font-bold text-[#0b5b38]">{{ priceText }}</div>
       </div>
 
       <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8 text-sm">
@@ -231,7 +229,7 @@ onMounted(async () => {
           <li
             v-for="f in property.features"
             :key="f"
-            class="px-3 py-1.5 bg-primary-50 text-primary-800 rounded-xl text-sm"
+            class="rounded-xl bg-emerald-100 px-3 py-1.5 text-sm text-emerald-900"
           >
             {{ f }}
           </li>
@@ -245,7 +243,7 @@ onMounted(async () => {
             <li
               v-for="item in highlightedMessageLabels"
               :key="item"
-              class="px-3 py-1.5 rounded-xl bg-sky-100 text-sky-900 text-sm font-medium"
+              class="rounded-xl bg-emerald-100 px-3 py-1.5 text-sm font-medium text-emerald-900"
             >
               {{ item }}
             </li>
@@ -278,6 +276,8 @@ onMounted(async () => {
           </li>
         </ul>
       </div>
+
+      <PropertyGallery :images="property.images" :alt="property.title" class="mb-8" />
 
       <div v-if="youtubeEmbedUrl" class="mb-8">
         <h2 class="text-lg font-semibold text-gray-900 mb-3">Video</h2>
@@ -321,7 +321,12 @@ onMounted(async () => {
     </template>
     <div v-else class="text-center py-16">
       <p class="text-gray-500">No se encontró la propiedad.</p>
-      <router-link to="/catalogo" class="btn-primary mt-4 inline-block">Volver al catálogo</router-link>
+      <router-link
+        to="/catalogo"
+        class="mt-4 inline-flex items-center justify-center rounded-xl bg-[#0b5b38] px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[#08472c] focus:outline-none focus:ring-2 focus:ring-emerald-200 focus:ring-offset-2"
+      >
+        Volver al catálogo
+      </router-link>
     </div>
   </div>
 </template>

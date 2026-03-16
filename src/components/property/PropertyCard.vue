@@ -69,13 +69,13 @@ function goToDetail() {
     </div>
     <div class="p-4">
       <div class="flex items-start justify-between gap-2 mb-2">
-        <span class="text-xs font-medium text-primary-600 uppercase tracking-wide">{{ typeLabel }}</span>
+        <span class="text-xs font-medium uppercase tracking-wide text-[#0b5b38]">{{ typeLabel }}</span>
         <StatusBadge :operation="property.operation" :status="property.status" />
       </div>
       <h2 class="font-semibold text-gray-900 line-clamp-2 mb-1">{{ property.title }}</h2>
       <p class="text-sm text-gray-500 mb-2">{{ property.location }}</p>
       <div class="flex items-baseline justify-between flex-wrap gap-2">
-        <span class="text-lg font-bold text-primary-600">{{ priceText }}</span>
+        <span class="text-lg font-bold text-[#0b5b38]">{{ priceText }}</span>
         <span v-if="property.totalArea" class="text-sm text-gray-500">{{ property.totalArea }} m²</span>
       </div>
     </div>

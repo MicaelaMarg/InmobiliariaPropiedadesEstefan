@@ -91,7 +91,12 @@ function nextPage() {
             Anterior
           </button>
           <span class="text-sm text-gray-600">Página {{ page }} de {{ totalPages }}</span>
-          <button type="button" class="btn-primary text-sm" :disabled="page >= totalPages" @click="nextPage">
+          <button
+            type="button"
+            class="inline-flex items-center justify-center rounded-xl bg-[#0b5b38] px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[#08472c] focus:outline-none focus:ring-2 focus:ring-emerald-200 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+            :disabled="page >= totalPages"
+            @click="nextPage"
+          >
             Siguiente
           </button>
         </div>

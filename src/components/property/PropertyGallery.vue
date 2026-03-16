@@ -123,7 +123,7 @@ function onTouchEnd(event) {
             :key="`${img.url || img.largeUrl}-${i}`"
             type="button"
             class="relative h-20 w-24 flex-shrink-0 overflow-hidden rounded-2xl border-2 bg-gray-100 transition xl:h-24 xl:w-full"
-            :class="i === currentIndex ? 'border-primary-500 shadow-sm' : 'border-transparent hover:border-gray-300'"
+            :class="i === currentIndex ? 'border-emerald-700 shadow-sm' : 'border-transparent hover:border-emerald-200'"
             :aria-label="`Ver imagen ${i + 1}`"
             @click="setIndex(i)"
           >

@@ -26,9 +26,9 @@ const operationLabel = computed(() => {
 
 const operationClass = computed(() => {
   return props.operation === 'venta'
-    ? 'bg-primary-100 text-primary-800'
+    ? 'bg-emerald-100 text-emerald-900'
     : props.operation === 'alquiler'
-      ? 'bg-blue-100 text-blue-800'
+      ? 'bg-emerald-200 text-emerald-900'
       : 'bg-gray-100 text-gray-700'
 })
 </script>
