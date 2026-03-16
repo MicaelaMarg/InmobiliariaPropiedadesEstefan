@@ -9,7 +9,7 @@ export const useAppStore = defineStore('app', () => {
     phone: '2236036761',
     whatsapp: '5492236036761',
     email: 'erikaestefanpropiedades@gmail.com',
-    address: 'Av. Acapulco 84',
+    address: 'Acapulco 84',
   })
 
   function updateSettings(newSettings) {
