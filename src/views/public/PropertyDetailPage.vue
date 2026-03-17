@@ -130,6 +130,13 @@ const propertyStats = computed(() => {
       icon: 'M7 7V5.75A1.75 1.75 0 018.75 4h.5A1.75 1.75 0 0111 5.75V7m2 0V5.75A1.75 1.75 0 0114.75 4h.5A1.75 1.75 0 0117 5.75V7m-12 3h14v3a4 4 0 01-4 4H9a4 4 0 01-4-4v-3zm2 7v2m10-2v2',
     },
     {
+      key: 'hasExpenses',
+      show: p.hasExpenses !== undefined,
+      label: 'Expensas',
+      value: p.hasExpenses ? 'Sí' : 'No',
+      icon: 'M5 13l4 4L19 7',
+    },
+    {
       key: 'referenceCode',
       show: !!p.referenceCode,
       label: 'Referencia',

@@ -84,11 +84,18 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="min-h-screen flex items-center justify-center bg-gray-100 px-4">
-    <div class="w-full max-w-md">
-      <div class="bg-white rounded-2xl shadow-soft p-8">
-        <h1 class="text-2xl font-bold text-gray-900 mb-2">Panel administrador</h1>
-        <p class="text-gray-500 text-sm mb-6">Iniciá sesión con tu cuenta.</p>
+  <div class="min-h-screen flex items-center justify-center bg-emerald-950 px-4">
+    <div class="w-full max-w-md relative">
+      <div class="absolute left-1/2 -top-12 -translate-x-1/2">
+        <div class="h-28 w-28 rounded-full bg-white/90 border border-emerald-200 overflow-hidden shadow-xl">
+          <img src="/images/branding/logoinmobiliaria.webp" alt="Logo inmobiliaria" class="h-full w-full object-cover" />
+        </div>
+      </div>
+      <div class="bg-emerald-900 rounded-2xl shadow-soft p-8 pt-16">
+        <div class="text-center mb-4">
+          <h1 class="text-2xl font-bold text-white">Panel administrador</h1>
+          <p class="text-emerald-200 text-sm">Iniciá sesión con tu cuenta.</p>
+        </div>
 
         <form @submit.prevent="submit" class="space-y-4">
           <p v-if="error" class="text-sm text-red-600 bg-red-50 p-3 rounded-xl">{{ error }}</p>
@@ -117,15 +124,9 @@ onUnmounted(() => {
             />
           </div>
           <div v-if="TURNSTILE_SITE_KEY" ref="turnstileContainer" class="flex justify-center min-h-[65px]"></div>
-          <button type="submit" class="btn-primary w-full py-3" :disabled="loading">
+          <button type="submit" class="w-full py-3 rounded-xl text-white font-semibold bg-emerald-700 hover:bg-emerald-800 transition" :disabled="loading">
             {{ loading ? 'Entrando...' : 'Entrar' }}
           </button>
-          <p class="text-center text-sm">
-            <router-link to="/admin/forgot-password" class="text-primary-600 hover:underline">¿Olvidaste tu contraseña?</router-link>
-          </p>
-          <p class="text-center text-sm text-gray-500">
-            <router-link to="/admin/setup" class="text-primary-600 hover:underline">¿Primera vez? Crear cuenta de administrador</router-link>
-          </p>
         </form>
 
         <p class="mt-6 text-center text-sm text-gray-500">

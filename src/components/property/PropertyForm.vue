@@ -45,6 +45,7 @@ function createDefaultForm() {
   highlightedMessages: [],
   paymentOptions: [],
   services: [],
+  hasExpenses: false,
   contactPhone: '',
   contactEmail: '',
   observations: '',
@@ -234,6 +235,13 @@ watch(featuresText, (t) => {
         <div class="md:col-span-2">
           <label class="block text-sm font-medium text-gray-700 mb-1">Ubicación / Zona</label>
           <input v-model="form.location" type="text" class="w-full rounded-xl border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-primary-500" placeholder="Barrio, ciudad, zona" />
+        </div>
+        <div class="md:col-span-2">
+          <label class="block text-sm font-medium text-gray-700 mb-1">¿Cuenta con expensas?</label>
+          <select v-model="form.hasExpenses" class="w-full rounded-xl border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-primary-500">
+            <option :value="true">Sí</option>
+            <option :value="false">No</option>
+          </select>
         </div>
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">Dirección</label>
