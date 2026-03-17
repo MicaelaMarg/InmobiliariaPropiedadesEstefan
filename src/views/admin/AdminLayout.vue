@@ -4,7 +4,7 @@ import AdminHeader from '../../components/layout/AdminHeader.vue'
 </script>
 
 <template>
-  <div class="h-screen flex bg-emerald-50 overflow-hidden">
+  <div class="h-screen flex bg-emerald-900 overflow-hidden">
     <!-- Sidebar fijo; el propio componente maneja responsivo/off-canvas -->
     <AdminSidebar />
 
