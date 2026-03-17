@@ -68,11 +68,8 @@ function goToDetail() {
         img-class="group-hover:scale-105"
       />
 
-      <div
-        v-if="ribbonText"
-        class="absolute left-0 top-2 z-20 overflow-hidden"
-      >
-        <span class="block bg-red-600 text-white text-xs font-bold uppercase px-3 py-1 rotate-[-8deg] shadow-md">
+      <div v-if="ribbonText" class="absolute left-3 top-3 z-20">
+        <span class="inline-flex items-center bg-red-600 text-white text-xs font-semibold uppercase px-3 py-1 rounded-md shadow-md">
           {{ ribbonText }}
         </span>
       </div>

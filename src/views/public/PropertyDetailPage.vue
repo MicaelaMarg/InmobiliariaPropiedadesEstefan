@@ -66,6 +66,14 @@ const priceText = computed(() => {
   return `${sym}${Number(p.price).toLocaleString('es-AR')}`
 })
 
+const statusHighlightText = computed(() => {
+  const status = (property.value?.status || '').toLowerCase()
+  if (status === 'retasado') return 'Retasado'
+  if (status === 'reserved' || status === 'reservado') return 'Reservado'
+  if (status === 'sold' || status === 'vendido') return 'Vendido'
+  return ''
+})
+
 const whatsappLink = computed(() => {
   const phone = property.value?.contactPhone || app.settings.whatsapp
   const num = (phone || '').replace(/\D/g, '')
@@ -197,10 +205,18 @@ onMounted(async () => {
     <LoadingSpinner v-if="loading" />
     <template v-else-if="property">
       <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-6">
-        <div>
-          <span class="text-sm font-medium uppercase tracking-wide text-[#0b5b38]">{{ typeLabel }}</span>
-          <h1 class="text-2xl md:text-3xl font-bold text-gray-900 mt-1">{{ property.title }}</h1>
-          <p class="text-gray-500 mt-1">{{ property.location }}</p>
+        <div class="space-y-2">
+          <div class="flex items-center gap-2 flex-wrap">
+            <span class="text-sm font-medium uppercase tracking-wide text-[#0b5b38]">{{ typeLabel }}</span>
+            <span
+              v-if="statusHighlightText"
+              class="inline-flex items-center bg-red-600 text-white text-xs font-semibold uppercase px-3 py-1 rounded-md shadow"
+            >
+              {{ statusHighlightText }}
+            </span>
+          </div>
+          <h1 class="text-2xl md:text-3xl font-bold text-gray-900">{{ property.title }}</h1>
+          <p class="text-gray-500">{{ property.location }}</p>
         </div>
         <div class="text-2xl font-bold text-[#0b5b38]" v-if="property.showPrice !== false">{{ priceText }}</div>
         <div class="text-sm font-semibold text-red-600" v-else>Consultar precio</div>
