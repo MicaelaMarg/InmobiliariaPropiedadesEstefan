@@ -17,6 +17,7 @@ const total = ref(0)
 const totalPages = ref(1)
 
 const queryFromRoute = computed(() => route.query.q || '')
+const queryReference = computed(() => route.query.ref || route.query.reference || '')
 
 watch(
   () => route.query,
@@ -25,7 +26,10 @@ watch(
 )
 
 onMounted(() => {
-  if (route.query.q) filters.value = { ...filters.value, location: route.query.q }
+  const newFilters = { ...filters.value }
+  if (route.query.q) newFilters.location = route.query.q
+  if (queryReference.value) newFilters.search = queryReference.value
+  filters.value = newFilters
   load()
 })
 
@@ -34,6 +38,7 @@ async function load(nextPage = page.value) {
   try {
     const f = { ...filters.value }
     if (queryFromRoute.value) f.location = queryFromRoute.value
+    if (queryReference.value) f.search = queryReference.value
     f.page = nextPage
     f.limit = pageSize
     const result = await fetchPropertiesPublic(f)
