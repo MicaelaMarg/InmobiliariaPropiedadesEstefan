@@ -31,10 +31,10 @@ function logout() {
         </svg>
       </button>
       <router-link to="/admin" class="flex items-center gap-3 text-white group">
-        <div class="h-11 w-11 rounded-full bg-white overflow-hidden border border-emerald-100/70 shadow-lg shadow-emerald-900/40">
+        <div class="h-12 w-12 rounded-full bg-white overflow-hidden border border-emerald-100/70 shadow-lg shadow-emerald-900/40">
           <img src="/images/branding/logoinmobiliaria.webp" alt="Logo inmobiliaria" class="h-full w-full object-cover" />
         </div>
-        <div class="leading-tight hidden sm:block">
+        <div class="leading-tight">
           <div class="text-[11px] uppercase tracking-[0.08em] text-emerald-100">Inmobiliaria</div>
           <div class="text-sm font-semibold text-white">Propiedades Estefan</div>
         </div>
