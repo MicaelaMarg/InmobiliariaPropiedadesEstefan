@@ -202,7 +202,8 @@ onMounted(async () => {
           <h1 class="text-2xl md:text-3xl font-bold text-gray-900 mt-1">{{ property.title }}</h1>
           <p class="text-gray-500 mt-1">{{ property.location }}</p>
         </div>
-        <div class="text-2xl font-bold text-[#0b5b38]">{{ priceText }}</div>
+        <div class="text-2xl font-bold text-[#0b5b38]" v-if="property.showPrice !== false">{{ priceText }}</div>
+        <div class="text-sm font-semibold text-red-600" v-else>Consultar precio</div>
       </div>
 
       <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8 text-sm">

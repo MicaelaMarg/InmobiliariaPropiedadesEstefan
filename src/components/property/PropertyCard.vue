@@ -42,6 +42,7 @@ const priceText = computed(() => {
 const ribbonText = computed(() => {
   const status = (props.property.status || '').toLowerCase()
   if (status === 'retasado') return 'Retasado'
+  if (status === 'reserved' || status === 'reservado') return 'Reservado'
   if (status === 'sold' || status === 'vendido') return 'Vendido'
   return ''
 })
@@ -71,7 +72,7 @@ function goToDetail() {
         v-if="ribbonText"
         class="absolute left-0 top-2 z-20 overflow-hidden"
       >
-        <span class="block bg-emerald-600 text-white text-xs font-bold uppercase px-3 py-1 rotate-[-12deg] shadow-lg">
+        <span class="block bg-red-600 text-white text-xs font-bold uppercase px-3 py-1 rotate-[-8deg] shadow-md">
           {{ ribbonText }}
         </span>
       </div>
@@ -91,7 +92,8 @@ function goToDetail() {
       <h2 class="font-semibold text-gray-900 line-clamp-2 mb-1">{{ property.title }}</h2>
       <p class="text-sm text-gray-500 mb-2">{{ property.location }}</p>
       <div class="flex items-baseline justify-between flex-wrap gap-2">
-        <span class="text-lg font-bold text-[#0b5b38]">{{ priceText }}</span>
+        <span class="text-lg font-bold text-[#0b5b38]" v-if="property.showPrice !== false">{{ priceText }}</span>
+        <span class="text-sm font-semibold text-red-600" v-else>Consultar</span>
         <span v-if="property.totalArea" class="text-sm text-gray-500">{{ property.totalArea }} m²</span>
       </div>
     </div>

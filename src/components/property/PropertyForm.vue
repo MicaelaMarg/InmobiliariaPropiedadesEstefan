@@ -24,6 +24,7 @@ function createDefaultForm() {
   operation: 'venta',
   price: '',
   currency: 'USD',
+  showPrice: true,
   location: '',
   address: '',
   city: '',
@@ -149,17 +150,21 @@ watch(featuresText, (t) => {
             <option v-for="c in CURRENCIES" :key="c.value" :value="c.value">{{ c.label }}</option>
           </select>
         </div>
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Estado publicación</label>
-          <select v-model="form.status" class="w-full rounded-xl border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-primary-500">
-            <option v-for="s in STATUSES" :key="s.value" :value="s.value">{{ s.label }}</option>
-          </select>
-        </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Estado publicación</label>
+        <select v-model="form.status" class="w-full rounded-xl border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-primary-500">
+          <option v-for="s in STATUSES" :key="s.value" :value="s.value">{{ s.label }}</option>
+        </select>
+      </div>
         <div class="flex items-center gap-2">
-          <input id="pub" v-model="form.isPublished" type="checkbox" class="rounded border-gray-300 text-primary-600 focus:ring-primary-500" />
-          <label for="pub">Publicado (visible en sitio)</label>
+          <input id="showPrice" v-model="form.showPrice" type="checkbox" class="rounded border-gray-300 text-primary-600 focus:ring-primary-500" />
+          <label for="showPrice">Mostrar precio en el sitio</label>
         </div>
-        <div class="flex items-center gap-2">
+      <div class="flex items-center gap-2">
+        <input id="pub" v-model="form.isPublished" type="checkbox" class="rounded border-gray-300 text-primary-600 focus:ring-primary-500" />
+        <label for="pub">Publicado (visible en sitio)</label>
+      </div>
+      <div class="flex items-center gap-2">
           <input id="feat" v-model="form.isFeatured" type="checkbox" class="rounded border-gray-300 text-primary-600 focus:ring-primary-500" />
           <label for="feat">Destacada</label>
         </div>
