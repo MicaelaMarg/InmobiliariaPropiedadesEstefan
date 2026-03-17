@@ -39,6 +39,13 @@ const priceText = computed(() => {
   return `${sym}${Number(p.price).toLocaleString('es-AR')}`
 })
 
+const ribbonText = computed(() => {
+  const status = (props.property.status || '').toLowerCase()
+  if (status === 'retasado') return 'Retasado'
+  if (status === 'sold' || status === 'vendido') return 'Vendido'
+  return ''
+})
+
 function goToDetail() {
   router.push({ name: 'PropertyDetail', params: { slug: props.property.slug } })
 }
@@ -59,6 +66,15 @@ function goToDetail() {
         class="h-full w-full"
         img-class="group-hover:scale-105"
       />
+
+      <div
+        v-if="ribbonText"
+        class="absolute left-0 top-2 z-20 overflow-hidden"
+      >
+        <span class="block bg-emerald-600 text-white text-xs font-bold uppercase px-3 py-1 rotate-[-12deg] shadow-lg">
+          {{ ribbonText }}
+        </span>
+      </div>
 
       <div
         v-if="property.images?.length > 1"
