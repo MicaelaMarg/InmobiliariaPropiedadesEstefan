@@ -123,13 +123,13 @@ async function save() {
     if (isEdit.value) {
       await updateProperty(route.params.id, payload)
       router.push({
-        name: 'AdminProperties',
+        name: 'AdminDashboard',
         query: { saved: payload.isPublished ? 'published' : 'updated' },
       })
     } else {
       await createProperty(payload)
       router.push({
-        name: 'AdminProperties',
+        name: 'AdminDashboard',
         query: { saved: payload.isPublished ? 'published' : 'created' },
       })
     }

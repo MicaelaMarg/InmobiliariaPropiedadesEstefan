@@ -1,13 +1,39 @@
 <script setup>
 import { ref, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { fetchAllProperties } from '../../services/properties'
 
 const router = useRouter()
+const route = useRoute()
 const stats = ref({ total: 0, active: 0, sold: 0, reserved: 0 })
 const loading = ref(true)
+const toastMessage = ref('')
+let toastTimer = null
+
+function showToast(message) {
+  toastMessage.value = message
+  if (toastTimer) {
+    clearTimeout(toastTimer)
+  }
+  toastTimer = setTimeout(() => {
+    toastMessage.value = ''
+    toastTimer = null
+  }, 3500)
+}
 
 onMounted(async () => {
+  const saved = route.query.saved
+  if (saved === 'published') {
+    showToast('Propiedad cargada correctamente.')
+    router.replace({ path: route.path, query: {} })
+  } else if (saved === 'created') {
+    showToast('Propiedad cargada correctamente.')
+    router.replace({ path: route.path, query: {} })
+  } else if (saved === 'updated') {
+    showToast('Propiedad actualizada correctamente.')
+    router.replace({ path: route.path, query: {} })
+  }
+
   try {
     const list = await fetchAllProperties()
     stats.value = {
@@ -28,6 +54,12 @@ function goNew() {
 
 <template>
   <div>
+    <div v-if="toastMessage" class="fixed top-6 right-6 z-50 max-w-sm rounded-2xl border border-green-200 bg-white px-4 py-3 text-sm font-medium text-green-800 shadow-[0_20px_45px_rgba(22,101,52,0.18)]">
+      <div class="flex items-start gap-3">
+        <span class="mt-0.5 flex h-6 w-6 items-center justify-center rounded-full bg-green-100 text-green-700">✓</span>
+        <span>{{ toastMessage }}</span>
+      </div>
+    </div>
     <h1 class="text-2xl font-bold text-gray-900 mb-6">Dashboard</h1>
 
     <div v-if="loading" class="animate-pulse flex gap-4">
