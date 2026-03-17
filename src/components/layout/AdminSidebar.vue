@@ -1,10 +1,13 @@
 <script setup>
 import { useRouter, useRoute } from 'vue-router'
 import { useAppStore } from '../../stores/app'
+import { useAuthStore } from '../../stores/auth'
 
 const router = useRouter()
 const route = useRoute()
 const app = useAppStore()
+const auth = useAuthStore()
+
 function closeSidebar() {
   app.adminSidebarOpen = false
 }
@@ -22,29 +25,62 @@ function isActive(path) {
   return route.path.startsWith(path)
 }
 
+function logout() {
+  auth.logout()
+  router.push({ name: 'AdminLogin' })
+  closeSidebar()
+}
 </script>
 
 <template>
   <div class="fixed lg:static inset-y-0 left-0 z-40 w-64 bg-[#003820] border-r border-white/20 transform lg:transform-none transition-transform text-white" :class="{ '-translate-x-full': !app.adminSidebarOpen }" data-admin-sidebar>
-    <div class="flex items-center justify-between h-14 px-4 border-b border-white/20 lg:hidden">
-      <span class="font-semibold text-white">Admin</span>
-      <button type="button" class="p-2 rounded-lg hover:bg-white/10" aria-label="Cerrar menú" @click="closeSidebar">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
-      </button>
+    <div class="flex flex-col h-full">
+      <div class="flex items-center justify-between h-14 px-4 border-b border-white/20 lg:hidden">
+        <span class="font-semibold text-white">Admin</span>
+        <button type="button" class="p-2 rounded-lg hover:bg-white/10" aria-label="Cerrar menú" @click="closeSidebar">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+        </button>
+      </div>
+
+      <div class="flex-1 flex flex-col">
+        <div class="px-4 pt-4 pb-3 flex items-center gap-3 border-b border-white/10">
+          <div class="h-10 w-10 rounded-full bg-white overflow-hidden border border-emerald-100/70 shadow-lg shadow-emerald-900/40">
+            <img src="/images/branding/logoinmobiliaria.webp" alt="Logo inmobiliaria" class="h-full w-full object-cover" />
+          </div>
+          <div class="leading-tight">
+            <div class="text-[11px] uppercase tracking-[0.08em] text-emerald-100">Inmobiliaria</div>
+            <div class="text-sm font-semibold text-white">Propiedades Estefan</div>
+          </div>
+        </div>
+
+        <nav class="p-4 space-y-1 flex-1">
+          <router-link
+            v-for="link in links"
+            :key="link.path"
+            :to="link.path"
+            class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors"
+            :class="isActive(link.path) ? 'bg-white/15 text-white' : 'text-emerald-100 hover:bg-white/10 hover:text-white'"
+            @click="closeSidebar"
+          >
+            <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="link.icon" /></svg>
+            {{ link.label }}
+          </router-link>
+        </nav>
+
+        <div class="px-4 pb-4">
+          <button
+            type="button"
+            class="w-full flex items-center justify-between px-3 py-2.5 rounded-xl bg-white/10 text-white hover:bg-white/15 transition"
+            @click="logout"
+          >
+            <span class="text-sm font-medium">Cerrar sesión</span>
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a2 2 0 01-2 2H7a2 2 0 01-2-2V7a2 2 0 012-2h4a2 2 0 012 2v1" />
+            </svg>
+          </button>
+        </div>
+      </div>
     </div>
-    <nav class="p-4 space-y-1">
-      <router-link
-        v-for="link in links"
-        :key="link.path"
-        :to="link.path"
-        class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors"
-        :class="isActive(link.path) ? 'bg-white/15 text-white' : 'text-emerald-100 hover:bg-white/10 hover:text-white'"
-        @click="closeSidebar"
-      >
-        <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="link.icon" /></svg>
-        {{ link.label }}
-      </router-link>
-    </nav>
   </div>
   <div v-if="app.adminSidebarOpen" class="fixed inset-0 bg-black/20 z-30 lg:hidden" aria-hidden="true" @click="closeSidebar" />
 </template>
