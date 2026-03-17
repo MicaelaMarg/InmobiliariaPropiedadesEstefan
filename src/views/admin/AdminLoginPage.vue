@@ -84,14 +84,14 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="min-h-screen flex items-center justify-center bg-emerald-950 px-4">
-    <div class="w-full max-w-md relative">
-      <div class="absolute left-1/2 -top-12 -translate-x-1/2">
-        <div class="h-28 w-28 rounded-full bg-white/90 border border-emerald-200 overflow-hidden shadow-xl">
+  <div class="min-h-screen flex items-center justify-center bg-emerald-950 px-4 py-8">
+    <div class="w-full max-w-md relative mt-6">
+      <div class="absolute left-1/2 -top-14 -translate-x-1/2">
+        <div class="h-28 w-28 rounded-full bg-white/95 border border-emerald-200 overflow-hidden shadow-2xl">
           <img src="/images/branding/logoinmobiliaria.webp" alt="Logo inmobiliaria" class="h-full w-full object-cover" />
         </div>
       </div>
-      <div class="bg-emerald-900 rounded-2xl shadow-soft p-8 pt-16">
+      <div class="bg-emerald-900 rounded-2xl shadow-soft p-8 pt-16 mt-10">
         <div class="text-center mb-4">
           <h1 class="text-2xl font-bold text-white">Panel administrador</h1>
           <p class="text-emerald-200 text-sm">Iniciá sesión con tu cuenta.</p>
