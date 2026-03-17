@@ -72,7 +72,7 @@ export async function fetchPropertiesPublic(filters = {}) {
   const limit = Number(filters.limit) > 0 ? Number(filters.limit) : 12
 
   if (USE_MOCK) {
-    let list = getMockList().filter(p => p.isPublished && p.status === 'available')
+    let list = getMockList().filter(p => p.isPublished)
     if (filters.operation) list = list.filter(p => p.operation === filters.operation)
     if (filters.type) list = list.filter(p => p.type === filters.type)
     if (filters.minPrice != null) list = list.filter(p => p.price >= filters.minPrice)
@@ -114,7 +114,7 @@ export async function fetchFeaturedProperties() {
 
 export async function fetchPropertyBySlug(slug) {
   if (USE_MOCK) {
-    const list = getMockList().filter(p => p.isPublished && p.status === 'available')
+    const list = getMockList().filter(p => p.isPublished)
     return list.find(p => p.slug === slug) || null
   }
 

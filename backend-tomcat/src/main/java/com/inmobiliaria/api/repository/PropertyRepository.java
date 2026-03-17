@@ -51,8 +51,8 @@ public class PropertyRepository {
     Integer limit
   ) throws SQLException {
     StringBuilder sql = new StringBuilder(BASE_SELECT)
-      .append(" where is_published = true and status = 'available'");
-    StringBuilder countSql = new StringBuilder("select count(*) from properties where is_published = true and status = 'available'");
+      .append(" where is_published = true");
+    StringBuilder countSql = new StringBuilder("select count(*) from properties where is_published = true");
     List<Object> params = new ArrayList<>();
 
     if (notBlank(operation)) {
@@ -147,7 +147,7 @@ public class PropertyRepository {
 
   public Property findBySlugPublic(String slug) throws SQLException {
     List<Property> properties = query(
-      BASE_SELECT + " where slug = ? and is_published = true and status = 'available'",
+      BASE_SELECT + " where slug = ? and is_published = true",
       List.of(slug),
       true,
       true
@@ -232,7 +232,6 @@ public class PropertyRepository {
              join properties p on p.id = pi.property_id
             where pi.id = ?
               and p.is_published = true
-              and p.status = 'available'
            """)) {
       statement.setLong(1, imageId);
 

@@ -128,6 +128,19 @@ const contactItems = [
     wide: true,
   },
 ]
+
+const socialLinks = [
+  {
+    name: 'Instagram',
+    href: 'https://www.instagram.com/estefanpropiedades/',
+    icon: 'M7 2h10a5 5 0 015 5v10a5 5 0 01-5 5H7a5 5 0 01-5-5V7a5 5 0 015-5zm9.5 2a1.5 1.5 0 100 3 1.5 1.5 0 000-3zM12 7a5 5 0 100 10 5 5 0 000-10z',
+  },
+  {
+    name: 'Facebook',
+    href: 'https://web.facebook.com/EstefanPropiedades/?_rdc=1&_rdr#',
+    icon: 'M14 8h3V4h-3c-2.21 0-4 1.79-4 4v3H7v4h3v5h4v-5h3l1-4h-4V8a1 1 0 011-1z',
+  },
+]
 </script>
 
 <template>
@@ -223,6 +236,28 @@ const contactItems = [
                     <p class="mt-1.5 text-sm text-slate-500 leading-6 break-words">{{ item.subtext }}</p>
                   </div>
                 </div>
+              </div>
+            </div>
+
+            <div class="mt-5 rounded-2xl border border-emerald-100 bg-emerald-50/70 p-5 md:p-6 shadow-[0_8px_24px_rgba(16,24,40,0.05)]">
+              <p class="text-xs font-semibold uppercase tracking-[0.14em] text-emerald-700">Redes</p>
+              <p class="mt-2 text-sm leading-6 text-slate-500">Seguinos y encontranos tambien en nuestras cuentas oficiales.</p>
+              <div class="mt-4 flex flex-wrap gap-3">
+                <a
+                  v-for="social in socialLinks"
+                  :key="social.name"
+                  :href="social.href"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="inline-flex h-12 items-center gap-3 rounded-2xl border border-emerald-200 bg-white px-4 text-sm font-semibold text-slate-900 shadow-sm transition-all hover:-translate-y-0.5 hover:border-emerald-300 hover:bg-emerald-50"
+                >
+                  <span class="flex h-9 w-9 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-800">
+                    <svg class="h-4.5 w-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" :d="social.icon" />
+                    </svg>
+                  </span>
+                  {{ social.name }}
+                </a>
               </div>
             </div>
           </div>

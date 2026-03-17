@@ -52,12 +52,12 @@ const infoCards = [
 const socialLinks = computed(() => [
   {
     name: 'Instagram',
-    href: 'https://instagram.com/',
+    href: 'https://www.instagram.com/estefanpropiedades/',
     icon: 'M7 2h10a5 5 0 015 5v10a5 5 0 01-5 5H7a5 5 0 01-5-5V7a5 5 0 015-5zm9.5 2a1.5 1.5 0 100 3 1.5 1.5 0 000-3zM12 7a5 5 0 100 10 5 5 0 000-10z',
   },
   {
     name: 'Facebook',
-    href: 'https://facebook.com/',
+    href: 'https://web.facebook.com/EstefanPropiedades/?_rdc=1&_rdr#',
     icon: 'M14 8h3V4h-3c-2.21 0-4 1.79-4 4v3H7v4h3v5h4v-5h3l1-4h-4V8a1 1 0 011-1z',
   },
   {

@@ -53,6 +53,7 @@ export const SERVICE_OPTIONS = [
   { value: 'electricidad', label: 'Electricidad' },
   { value: 'internet', label: 'Internet' },
   { value: 'pavimento', label: 'Pavimento' },
+  { value: 'expensas', label: 'Expensas' },
 ]
 
 const mockProperties = [
@@ -301,7 +302,7 @@ export function getMockPropertyById(id) {
 }
 
 export function getMockPropertiesPublic() {
-  return getMockProperties().filter(p => p.isPublished && p.status === 'available')
+  return getMockProperties().filter(p => p.isPublished)
 }
 
 export function getMockFeaturedProperties() {
