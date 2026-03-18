@@ -166,8 +166,14 @@ const youtubeEmbedUrl = computed(() => getYouTubeEmbedUrl(property.value?.youtub
 const highlightedMessageLabels = computed(() => {
   const map = new Map(HIGHLIGHTED_MESSAGE_OPTIONS.map(item => [item.value, item.label]))
   const statusLike = new Set(['retasado'])
+  const seen = new Set()
   return (property.value?.highlightedMessages || [])
     .filter(value => !statusLike.has(value))
+    .filter(value => {
+      if (seen.has(value)) return false
+      seen.add(value)
+      return true
+    })
     .map(value => map.get(value) || value)
 })
 
