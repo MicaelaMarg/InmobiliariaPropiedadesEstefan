@@ -1,0 +1,9 @@
+.git
+node_modules
+dist
+dist-ssr
+.vscode
+.idea
+backend-tomcat
+*.log
+*.local
