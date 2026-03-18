@@ -117,17 +117,17 @@ onBeforeUnmount(() => {
               <p class="text-sm text-white/80">{{ currentIndex + 1 }} / {{ sortedImages.length }}</p>
             </div>
 
-            <div class="flex items-center gap-2">
-              <button type="button" class="rounded-full border border-white/15 bg-white/10 px-3 py-2 text-sm transition hover:bg-white/20" @click="zoomOut">
-                -
-              </button>
-              <button type="button" class="rounded-full border border-white/15 bg-white/10 px-3 py-2 text-sm transition hover:bg-white/20" @click="zoomIn">
-                +
-              </button>
-              <button type="button" class="rounded-full border border-white/15 bg-white/10 px-4 py-2 text-sm transition hover:bg-white/20" @click="close">
-                Cerrar
-              </button>
-            </div>
+          <div class="flex items-center gap-2">
+            <button type="button" class="rounded-full border border-white/30 bg-black/40 px-3 py-2 text-sm transition hover:bg-black/60 shadow-lg shadow-black/30" @click="zoomOut">
+              -
+            </button>
+            <button type="button" class="rounded-full border border-white/30 bg-black/40 px-3 py-2 text-sm transition hover:bg-black/60 shadow-lg shadow-black/30" @click="zoomIn">
+              +
+            </button>
+            <button type="button" class="rounded-full border border-white/30 bg-black/50 px-4 py-2 text-sm transition hover:bg-black/70 shadow-lg shadow-black/30" @click="close">
+              Cerrar
+            </button>
+          </div>
           </div>
 
           <div class="flex min-h-0 flex-1 items-center gap-3 px-3 pb-3 md:gap-5 md:px-6 md:pb-6">
@@ -163,7 +163,7 @@ onBeforeUnmount(() => {
                 <button
                   v-if="sortedImages.length > 1"
                   type="button"
-                  class="absolute left-3 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/15 bg-slate-950/50 text-white transition hover:bg-slate-950/70 md:hidden"
+                  class="absolute left-3 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/30 bg-black/50 text-white transition hover:bg-black/70 shadow-lg shadow-black/30 md:hidden"
                   aria-label="Imagen anterior"
                   @click="previous"
                 >
@@ -172,7 +172,7 @@ onBeforeUnmount(() => {
                 <button
                   v-if="sortedImages.length > 1"
                   type="button"
-                  class="absolute right-3 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/15 bg-slate-950/50 text-white transition hover:bg-slate-950/70 md:hidden"
+                  class="absolute right-3 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/30 bg-black/50 text-white transition hover:bg-black/70 shadow-lg shadow-black/30 md:hidden"
                   aria-label="Imagen siguiente"
                   @click="next"
                 >

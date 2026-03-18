@@ -36,6 +36,7 @@ const typeLabel = computed(() => {
 
 const priceText = computed(() => {
   const p = props.property
+  if (p.price === null || p.price === undefined || p.price === '' || p.showPrice === false) return null
   const sym = p.currency === 'USD' ? 'USD ' : '$'
   return `${sym}${Number(p.price).toLocaleString('es-AR')}`
 })
@@ -112,8 +113,8 @@ function goToDetail() {
       <h2 class="font-semibold text-gray-900 line-clamp-2 mb-1">{{ property.title }}</h2>
       <p class="text-sm text-gray-500 mb-2">{{ property.location }}</p>
       <div class="flex items-baseline justify-between flex-wrap gap-2">
-        <span class="text-lg font-bold text-[#0b5b38]" v-if="property.showPrice !== false">{{ priceText }}</span>
-        <span class="text-sm font-semibold text-red-600" v-else>Consultar</span>
+        <span class="text-lg font-bold text-[#0b5b38]" v-if="priceText">{{ priceText }}</span>
+        <span class="text-sm font-semibold text-red-600" v-else>Consultá para más información sobre valores</span>
         <span v-if="property.totalArea" class="text-sm text-gray-500">{{ property.totalArea }} m²</span>
       </div>
     </div>

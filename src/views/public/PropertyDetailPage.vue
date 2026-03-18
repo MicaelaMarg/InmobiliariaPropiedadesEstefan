@@ -61,8 +61,9 @@ const typeLabel = computed(() => {
 })
 
 const priceText = computed(() => {
-  if (!property.value) return ''
+  if (!property.value) return null
   const p = property.value
+  if (p.price === null || p.price === undefined || p.price === '' || p.showPrice === false) return null
   const sym = p.currency === 'USD' ? 'USD ' : '$'
   return `${sym}${Number(p.price).toLocaleString('es-AR')}`
 })
@@ -239,8 +240,8 @@ onMounted(async () => {
           <h1 class="text-2xl md:text-3xl font-bold text-gray-900">{{ property.title }}</h1>
           <p class="text-gray-500">{{ property.location }}</p>
         </div>
-        <div class="text-2xl font-bold text-[#0b5b38]" v-if="property.showPrice !== false">{{ priceText }}</div>
-        <div class="text-sm font-semibold text-red-600" v-else>Consultar precio</div>
+        <div class="text-2xl font-bold text-[#0b5b38]" v-if="priceText">{{ priceText }}</div>
+        <div class="text-sm font-semibold text-red-600" v-else>Consultá para más información sobre valores</div>
       </div>
 
       <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8 text-sm">
