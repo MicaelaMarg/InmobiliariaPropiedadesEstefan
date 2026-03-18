@@ -3,11 +3,13 @@
  * En dev puede quedar vacío para habilitar el modo mock; en prod debe estar siempre.
  */
 const raw = (import.meta.env.VITE_API_URL || '').trim().replace(/\/+$/, '')
+const assetsRaw = (import.meta.env.VITE_ASSETS_BASE_URL || '').trim().replace(/\/+$/, '')
 
 export const API_BASE_URL = raw && !raw.endsWith('/api') ? `${raw}/api` : raw
 
 export const IS_DEV = import.meta.env.DEV
 export const USE_MOCK = IS_DEV && !API_BASE_URL
+export const ASSETS_BASE_URL = assetsRaw || ''
 
 export function assertApiConfigured() {
   if (!API_BASE_URL && !USE_MOCK) {

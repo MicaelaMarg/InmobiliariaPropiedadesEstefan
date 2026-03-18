@@ -1,4 +1,4 @@
-import { API_BASE_URL } from '../config/api'
+import { API_BASE_URL, ASSETS_BASE_URL } from '../config/api'
 
 const FALLBACK_URL = 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=1200'
 const API_ORIGIN = API_BASE_URL ? API_BASE_URL.replace(/\/api$/, '') : ''
@@ -24,7 +24,12 @@ function resolveImageReference(url) {
   if (!url) return null
   if (/^(data:|blob:|https?:)/i.test(url)) return url
   if (url.startsWith('//')) return url
-  if (url.startsWith('/')) return API_ORIGIN ? `${API_ORIGIN}${url}` : url
+  if (url.startsWith('/')) {
+    if (ASSETS_BASE_URL) return `${ASSETS_BASE_URL}${url}`
+    return API_ORIGIN ? `${API_ORIGIN}${url}` : url
+  }
+  // ruta relativa (ej. images/branding/foo.jpg)
+  if (ASSETS_BASE_URL) return `${ASSETS_BASE_URL}/${url}`
   return url
 }
 

@@ -24,6 +24,11 @@ public class BootstrapListener implements ServletContextListener {
     initEmailService(context);
   }
 
+  @Override
+  public void contextDestroyed(ServletContextEvent sce) {
+    Database.close();
+  }
+
   private static void initEmailService(jakarta.servlet.ServletContext context) {
     String user = firstNonBlank(
       context.getInitParameter("inmobiliaria.smtp.user"),

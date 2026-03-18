@@ -3,12 +3,13 @@ package com.inmobiliaria.api.repository;
 import com.inmobiliaria.api.model.Property;
 import com.inmobiliaria.api.model.PropertyImage;
 import com.inmobiliaria.api.util.SlugUtils;
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
 import jakarta.servlet.ServletContext;
 
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -22,6 +23,7 @@ public final class Database {
   private static volatile String jdbcUrl;
   private static volatile String dbUser;
   private static volatile String dbPassword;
+  private static HikariDataSource dataSource;
 
   private Database(){}
 
@@ -70,6 +72,8 @@ public final class Database {
     }
 
     System.out.println("[inmobiliaria] Conectado a MySQL: " + jdbcUrl);
+
+    initPool(context);
 
     try(Connection connection = getConnection();
         Statement statement = connection.createStatement()){
@@ -178,11 +182,11 @@ public final class Database {
 
   public static Connection getConnection() throws SQLException{
 
-    if(jdbcUrl == null){
+    if(jdbcUrl == null || dataSource == null){
       throw new IllegalStateException("La base no fue inicializada");
     }
 
-    return DriverManager.getConnection(jdbcUrl,dbUser,dbPassword);
+    return dataSource.getConnection();
   }
 
   private static void seedInitialData() throws SQLException{
@@ -463,5 +467,44 @@ public final class Database {
       }
     }
     return null;
+  }
+
+  private static int parseInt(String value, int defaultValue) {
+    if (value == null || value.isBlank()) return defaultValue;
+    try {
+      return Integer.parseInt(value);
+    } catch (NumberFormatException e) {
+      return defaultValue;
+    }
+  }
+
+  private static void initPool(ServletContext context) {
+    if (dataSource != null) return;
+
+    HikariConfig config = new HikariConfig();
+    config.setJdbcUrl(jdbcUrl);
+    config.setUsername(dbUser);
+    config.setPassword(dbPassword);
+    config.setMaximumPoolSize(parseInt(firstNonBlank(
+      System.getenv("DB_POOL_SIZE"),
+      context.getInitParameter("inmobiliaria.db.pool.max"),
+      "10"
+    ), 10));
+    config.setMinimumIdle(parseInt(firstNonBlank(
+      context.getInitParameter("inmobiliaria.db.pool.min"),
+      "2"
+    ), 2));
+    config.setConnectionTimeout(5000);
+    config.setIdleTimeout(60000);
+    config.setMaxLifetime(600000);
+    config.setPoolName("inmobiliaria-hikari");
+    dataSource = new HikariDataSource(config);
+  }
+
+  public static void close() {
+    if (dataSource != null) {
+      dataSource.close();
+      dataSource = null;
+    }
   }
 }
