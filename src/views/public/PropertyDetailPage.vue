@@ -9,6 +9,7 @@ import PropertyCard from '../../components/property/PropertyCard.vue'
 import LoadingSpinner from '../../components/ui/LoadingSpinner.vue'
 import { fetchPropertyBySlug, fetchPropertiesPublic } from '../../services/properties'
 import { HIGHLIGHTED_MESSAGE_OPTIONS, PAYMENT_OPTION_OPTIONS, SERVICE_OPTIONS } from '../../data/mockProperties'
+import StatusBadge from '../../components/ui/StatusBadge.vue'
 
 const route = useRoute()
 const app = useAppStore()
@@ -72,6 +73,11 @@ const statusHighlightText = computed(() => {
   if (status === 'reserved' || status === 'reservado') return 'Reservado'
   if (status === 'sold' || status === 'vendido') return 'Vendido'
   return ''
+})
+
+const hideStatusPill = computed(() => {
+  const status = (property.value?.status || '').toLowerCase()
+  return ['retasado', 'reserved', 'reservado', 'sold', 'vendido'].includes(status)
 })
 
 const whatsappLink = computed(() => {
@@ -158,7 +164,10 @@ const youtubeEmbedUrl = computed(() => getYouTubeEmbedUrl(property.value?.youtub
 
 const highlightedMessageLabels = computed(() => {
   const map = new Map(HIGHLIGHTED_MESSAGE_OPTIONS.map(item => [item.value, item.label]))
-  return (property.value?.highlightedMessages || []).map(value => map.get(value) || value)
+  const statusLike = new Set(['retasado'])
+  return (property.value?.highlightedMessages || [])
+    .filter(value => !statusLike.has(value))
+    .map(value => map.get(value) || value)
 })
 
 const paymentOptionLabels = computed(() => {
@@ -213,6 +222,18 @@ onMounted(async () => {
               class="inline-flex items-center bg-red-600 text-white text-xs font-semibold uppercase px-3 py-1 rounded-md shadow"
             >
               {{ statusHighlightText }}
+            </span>
+            <StatusBadge
+              :operation="property.operation"
+              :status="property.status"
+              :hide-status="hideStatusPill"
+            />
+            <span
+              v-for="label in highlightedMessageLabels"
+              :key="label"
+              class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-800"
+            >
+              {{ label }}
             </span>
           </div>
           <h1 class="text-2xl md:text-3xl font-bold text-gray-900">{{ property.title }}</h1>

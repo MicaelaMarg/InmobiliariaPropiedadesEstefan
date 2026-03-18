@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import StatusBadge from '../ui/StatusBadge.vue'
 import ResponsiveImage from '../ui/ResponsiveImage.vue'
 import { getPropertyPrimaryImage } from '../../utils/propertyImages'
+import { HIGHLIGHTED_MESSAGE_OPTIONS } from '../../data/mockProperties'
 
 const props = defineProps({
   property: { type: Object, required: true },
@@ -47,6 +48,19 @@ const ribbonText = computed(() => {
   return ''
 })
 
+const hideStatusPill = computed(() => {
+  const status = (props.property.status || '').toLowerCase()
+  return ['retasado', 'reserved', 'reservado', 'sold', 'vendido'].includes(status)
+})
+
+const highlightedLabels = computed(() => {
+  const map = new Map(HIGHLIGHTED_MESSAGE_OPTIONS.map(item => [item.value, item.label]))
+  const statusLike = new Set(['retasado'])
+  return (props.property.highlightedMessages || [])
+    .filter(value => !statusLike.has(value))
+    .map(value => map.get(value) || value)
+})
+
 function goToDetail() {
   router.push({ name: 'PropertyDetail', params: { slug: props.property.slug } })
 }
@@ -84,7 +98,16 @@ function goToDetail() {
     <div class="p-4">
       <div class="flex items-start justify-between gap-2 mb-2">
         <span class="text-xs font-medium uppercase tracking-wide text-[#0b5b38]">{{ typeLabel }}</span>
-        <StatusBadge :operation="property.operation" :status="property.status" />
+        <div class="flex items-center justify-end gap-1.5 flex-wrap">
+          <StatusBadge :operation="property.operation" :status="property.status" :hide-status="hideStatusPill" />
+          <span
+            v-for="label in highlightedLabels"
+            :key="label"
+            class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-800"
+          >
+            {{ label }}
+          </span>
+        </div>
       </div>
       <h2 class="font-semibold text-gray-900 line-clamp-2 mb-1">{{ property.title }}</h2>
       <p class="text-sm text-gray-500 mb-2">{{ property.location }}</p>

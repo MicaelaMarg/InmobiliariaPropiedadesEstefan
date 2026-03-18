@@ -4,10 +4,11 @@ import { computed } from 'vue'
 const props = defineProps({
   status: { type: String, default: 'available' },
   operation: { type: String, default: '' },
+  hideStatus: { type: Boolean, default: false },
 })
 
 const statusLabel = computed(() => {
-  const map = { available: 'Disponible', reserved: 'Reservado', sold: 'Vendido' }
+  const map = { available: 'Disponible', reserved: 'Reservado', sold: 'Vendido', retasado: 'Retasado' }
   return map[props.status] || props.status
 })
 
@@ -16,6 +17,7 @@ const statusClass = computed(() => {
     available: 'bg-green-100 text-green-800',
     reserved: 'bg-amber-100 text-amber-800',
     sold: 'bg-gray-200 text-gray-700',
+    retasado: 'bg-red-100 text-red-800',
   }
   return map[props.status] || 'bg-gray-100 text-gray-700'
 })
@@ -43,6 +45,7 @@ const operationClass = computed(() => {
       {{ operationLabel }}
     </span>
     <span
+      v-if="!hideStatus"
       class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
       :class="statusClass"
     >
