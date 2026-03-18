@@ -25,8 +25,13 @@ function resolveImageReference(url) {
   if (/^(data:|blob:|https?:)/i.test(url)) return addCloudinaryAutoParams(url)
   if (url.startsWith('//')) return addCloudinaryAutoParams(`https:${url}`)
   if (url.startsWith('/')) {
-    if (ASSETS_BASE_URL) return `${ASSETS_BASE_URL}${url}`
-    return addCloudinaryAutoParams(API_ORIGIN ? `${API_ORIGIN}${url}` : url)
+    const isApiPath = url.startsWith('/api/')
+    const target = !isApiPath && ASSETS_BASE_URL
+      ? `${ASSETS_BASE_URL}${url}`
+      : API_ORIGIN
+        ? `${API_ORIGIN}${url}`
+        : url
+    return addCloudinaryAutoParams(target)
   }
   // ruta relativa (ej. images/branding/foo.jpg)
   if (ASSETS_BASE_URL) return addCloudinaryAutoParams(`${ASSETS_BASE_URL}/${url}`)
