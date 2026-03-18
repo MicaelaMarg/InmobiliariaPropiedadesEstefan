@@ -14,7 +14,6 @@ const filters = ref({
   minPrice: props.modelValue.minPrice ?? '',
   maxPrice: props.modelValue.maxPrice ?? '',
   location: props.modelValue.location || '',
-  search: props.modelValue.search || '',
 })
 
 watch(
@@ -26,7 +25,6 @@ watch(
     if (v.minPrice !== '') out.minPrice = Number(v.minPrice)
     if (v.maxPrice !== '') out.maxPrice = Number(v.maxPrice)
     if (v.location?.trim()) out.location = v.location.trim()
-    if (v.search?.trim()) out.search = v.search.trim()
     emit('update:modelValue', out)
   },
   { deep: true }
@@ -39,7 +37,6 @@ function clearFilters() {
     minPrice: '',
     maxPrice: '',
     location: '',
-    search: '',
   }
   emit('search')
 }
@@ -94,15 +91,6 @@ function clearFilters() {
           v-model="filters.location"
           type="text"
           placeholder="Ciudad o zona"
-          class="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm focus:border-emerald-700 focus:ring-2 focus:ring-emerald-200"
-        />
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">Referencia</label>
-        <input
-          v-model="filters.search"
-          type="text"
-          placeholder="Código de referencia (REF-001, etc.)"
           class="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm focus:border-emerald-700 focus:ring-2 focus:ring-emerald-200"
         />
       </div>
