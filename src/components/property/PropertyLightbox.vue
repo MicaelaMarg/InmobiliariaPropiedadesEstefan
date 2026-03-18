@@ -111,7 +111,7 @@ onBeforeUnmount(() => {
         @click.self="close"
       >
         <div class="flex h-full flex-col">
-          <div class="flex items-center justify-between gap-3 px-4 py-4 text-white md:px-6">
+          <div class="sticky top-0 z-10 flex items-center justify-between gap-3 px-4 py-4 text-white md:px-6 bg-slate-950/95 backdrop-blur-md border-b border-white/10">
             <div>
               <p class="text-sm font-medium uppercase tracking-[0.24em] text-white/70">Galería</p>
               <p class="text-sm text-white/80">{{ currentIndex + 1 }} / {{ sortedImages.length }}</p>
