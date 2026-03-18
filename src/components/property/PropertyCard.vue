@@ -112,15 +112,6 @@ function goToDetail() {
       </div>
       <h2 class="font-semibold text-gray-900 line-clamp-2 mb-1">{{ property.title }}</h2>
       <p class="text-sm text-gray-500 mb-2">{{ property.location }}</p>
-      <div v-if="highlightedLabels.length" class="flex flex-wrap gap-1.5 mb-2">
-        <span
-          v-for="label in highlightedLabels"
-          :key="label"
-          class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-emerald-50 text-emerald-800"
-        >
-          {{ label }}
-        </span>
-      </div>
       <div class="flex items-baseline justify-between flex-wrap gap-2">
         <span class="text-lg font-bold text-[#0b5b38]" v-if="priceText">{{ priceText }}</span>
         <span class="text-sm font-semibold text-red-600" v-else>Consultá para más información sobre valores</span>
