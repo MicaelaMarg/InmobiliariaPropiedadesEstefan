@@ -8,10 +8,20 @@ const MOCK_STORAGE_KEY = 'inmobiliaria_mock_properties'
 // Estado en memoria para mock (persiste create/update/delete durante la sesion)
 let mockList = null
 
+function normalizeProperty(item = {}) {
+  return {
+    highlightedMessages: Array.isArray(item.highlightedMessages) ? item.highlightedMessages : [],
+    paymentOptions: Array.isArray(item.paymentOptions) ? item.paymentOptions : [],
+    services: Array.isArray(item.services) ? item.services : [],
+    ...item,
+  }
+}
+
 function getMockList() {
   if (!mockList) {
     const stored = readStoredMockList()
     mockList = stored || getMockProperties()
+    mockList = mockList.map(normalizeProperty)
   }
   return mockList
 }
@@ -96,7 +106,7 @@ export async function fetchPropertiesPublic(filters = {}) {
     const currentPage = Math.min(page, totalPages)
     const start = (currentPage - 1) * limit
     return {
-      items: list.slice(start, start + limit),
+      items: list.slice(start, start + limit).map(normalizeProperty),
       total,
       page: currentPage,
       limit,
@@ -106,7 +116,11 @@ export async function fetchPropertiesPublic(filters = {}) {
 
   const res = await fetch(buildUrl('/properties', filters))
   if (!res.ok) throw new Error('Error al cargar propiedades')
-  return res.json()
+  const data = await res.json()
+  if (Array.isArray(data?.items)) {
+    data.items = data.items.map(normalizeProperty)
+  }
+  return data
 }
 
 export async function fetchFeaturedProperties() {
@@ -119,7 +133,7 @@ export async function fetchFeaturedProperties() {
   const res = await fetch(buildUrl('/properties', { featured: 1, limit: 6, page: 1 }))
   if (!res.ok) throw new Error('Error al cargar destacadas')
   const data = await res.json()
-  return Array.isArray(data?.items) ? data.items : []
+  return Array.isArray(data?.items) ? data.items.map(normalizeProperty) : []
 }
 
 export async function fetchPropertyBySlug(slug) {
@@ -131,7 +145,8 @@ export async function fetchPropertyBySlug(slug) {
   const res = await fetch(buildUrl(`/properties/by-slug/${slug}`))
   if (res.status === 404) return null
   if (!res.ok) throw new Error('Error al cargar propiedad')
-  return res.json()
+  const data = await res.json()
+  return data ? normalizeProperty(data) : null
 }
 
 // Admin: todas las propiedades
@@ -167,7 +182,8 @@ export async function fetchPropertyById(id) {
   })
   if (res.status === 404) return null
   if (!res.ok) throw new Error('Error al cargar propiedad')
-  return res.json()
+  const data = await res.json()
+  return data ? normalizeProperty(data) : null
 }
 
 export async function createProperty(data) {
