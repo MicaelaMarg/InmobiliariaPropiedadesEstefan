@@ -22,15 +22,62 @@ function toNumber(value) {
 
 function resolveImageReference(url) {
   if (!url) return null
-  if (/^(data:|blob:|https?:)/i.test(url)) return url
-  if (url.startsWith('//')) return url
+  if (/^(data:|blob:|https?:)/i.test(url)) return addCloudinaryAutoParams(url)
+  if (url.startsWith('//')) return addCloudinaryAutoParams(`https:${url}`)
   if (url.startsWith('/')) {
     if (ASSETS_BASE_URL) return `${ASSETS_BASE_URL}${url}`
-    return API_ORIGIN ? `${API_ORIGIN}${url}` : url
+    return addCloudinaryAutoParams(API_ORIGIN ? `${API_ORIGIN}${url}` : url)
   }
   // ruta relativa (ej. images/branding/foo.jpg)
-  if (ASSETS_BASE_URL) return `${ASSETS_BASE_URL}/${url}`
-  return url
+  if (ASSETS_BASE_URL) return addCloudinaryAutoParams(`${ASSETS_BASE_URL}/${url}`)
+  return addCloudinaryAutoParams(url)
+}
+
+function addCloudinaryAutoParams(urlString) {
+  try {
+    const url = new URL(urlString)
+    if (!isCloudinaryHost(url.hostname)) return urlString
+
+    const segments = url.pathname.split('/').filter(Boolean)
+    const uploadIdx = segments.indexOf('upload')
+    if (uploadIdx === -1) return urlString
+
+    const afterUpload = segments[uploadIdx + 1]
+    const isVersion = afterUpload && /^v\d+/.test(afterUpload)
+    const hasTransformSegment = afterUpload && !isVersion
+
+    const transforms = new Set(
+      hasTransformSegment ? afterUpload.split(',').filter(Boolean) : []
+    )
+
+    const hasFormat = Array.from(transforms).some(t => t.startsWith('f_'))
+    const hasQuality = Array.from(transforms).some(t => t.startsWith('q_'))
+
+    if (!hasFormat) transforms.add('f_auto')
+    if (!hasQuality) transforms.add('q_auto')
+
+    const transformSegment = Array.from(transforms).join(',')
+
+    const newSegments = [...segments]
+    if (hasTransformSegment) {
+      newSegments[uploadIdx + 1] = transformSegment
+    } else {
+      newSegments.splice(uploadIdx + 1, 0, transformSegment)
+    }
+
+    url.pathname = '/' + newSegments.join('/')
+    return url.toString()
+  } catch {
+    return urlString
+  }
+}
+
+function isCloudinaryHost(hostname) {
+  return (
+    hostname === 'res.cloudinary.com' ||
+    hostname.endsWith('.res.cloudinary.com') ||
+    hostname.endsWith('.cloudinary.com')
+  )
 }
 
 export function createFallbackImage() {
