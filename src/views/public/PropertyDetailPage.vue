@@ -147,7 +147,7 @@ const propertyStats = computed(() => {
       key: 'hasExpenses',
       show: p.hasExpenses !== undefined,
       label: 'Expensas',
-      value: p.hasExpenses ? 'Sí' : 'No',
+      value: p.hasExpenses ? 'Con expensas' : 'Sin expensas',
       icon: 'M5 13l4 4L19 7',
     },
     {
