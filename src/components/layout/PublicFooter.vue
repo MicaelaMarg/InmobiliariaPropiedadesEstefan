@@ -65,6 +65,7 @@ const socialLinks = [
       </div>
       <div class="border-t border-gray-700 mt-8 pt-6 text-center text-sm">
         © {{ new Date().getFullYear() }} {{ settings.businessName }}. Todos los derechos reservados.
+        <span class="block mt-1 text-gray-400">Desarrollado por Micaela Mattiucci.</span>
       </div>
     </div>
   </footer>
