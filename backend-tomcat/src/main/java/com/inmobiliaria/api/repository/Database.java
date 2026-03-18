@@ -496,8 +496,13 @@ public final class Database {
     ), 2));
     config.setConnectionTimeout(5000);
     config.setIdleTimeout(60000);
-    config.setMaxLifetime(600000);
+    config.setMaxLifetime(1800000); // 30 min, evita cortes prematuros en Railway/MySQL
     config.setPoolName("inmobiliaria-hikari");
+    config.addDataSourceProperty("cachePrepStmts", "true");
+    config.addDataSourceProperty("prepStmtCacheSize", "250");
+    config.addDataSourceProperty("prepStmtCacheSqlLimit", "2048");
+    config.addDataSourceProperty("useServerPrepStmts", "true");
+    config.setLeakDetectionThreshold(10000);
     dataSource = new HikariDataSource(config);
   }
 
