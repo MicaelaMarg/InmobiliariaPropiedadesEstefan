@@ -1,8 +1,7 @@
 // Servicio de propiedades. Usa mock data si no hay backend configurado.
 
 import { getMockProperties } from '../data/mockProperties'
-import { API_BASE_URL } from '../config/api'
-const USE_MOCK = !API_BASE_URL
+import { API_BASE_URL, USE_MOCK, assertApiConfigured } from '../config/api'
 const MOCK_STORAGE_KEY = 'inmobiliaria_mock_properties'
 
 // Estado en memoria para mock (persiste create/update/delete durante la sesion)
@@ -114,6 +113,7 @@ export async function fetchPropertiesPublic(filters = {}) {
     }
   }
 
+  assertApiConfigured()
   const res = await fetch(buildUrl('/properties', filters))
   if (!res.ok) throw new Error('Error al cargar propiedades')
   const data = await res.json()
@@ -130,6 +130,7 @@ export async function fetchFeaturedProperties() {
       .slice(0, 6)
   }
 
+  assertApiConfigured()
   const res = await fetch(buildUrl('/properties', { featured: 1, limit: 6, page: 1 }))
   if (!res.ok) throw new Error('Error al cargar destacadas')
   const data = await res.json()
@@ -142,6 +143,7 @@ export async function fetchPropertyBySlug(slug) {
     return list.find(p => p.slug === slug) || null
   }
 
+  assertApiConfigured()
   const res = await fetch(buildUrl(`/properties/by-slug/${slug}`))
   if (res.status === 404) return null
   if (!res.ok) throw new Error('Error al cargar propiedad')
@@ -167,6 +169,7 @@ export async function fetchAllProperties(filters = {}) {
     return list
   }
 
+  assertApiConfigured()
   const res = await fetch(buildUrl('/admin/properties', filters), {
     headers: getAuthHeader(),
   })
@@ -177,6 +180,7 @@ export async function fetchAllProperties(filters = {}) {
 export async function fetchPropertyById(id) {
   if (USE_MOCK) return getMockList().find(p => p.id === id) || null
 
+  assertApiConfigured()
   const res = await fetch(buildUrl(`/admin/properties/${id}`), {
     headers: getAuthHeader(),
   })
@@ -205,6 +209,7 @@ export async function createProperty(data) {
     return newProp
   }
 
+  assertApiConfigured()
   const res = await fetch(buildUrl('/admin/properties'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
@@ -224,6 +229,7 @@ export async function updateProperty(id, data) {
     return list[idx]
   }
 
+  assertApiConfigured()
   const res = await fetch(buildUrl(`/admin/properties/${id}`), {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
@@ -243,6 +249,7 @@ export async function deleteProperty(id) {
     return true
   }
 
+  assertApiConfigured()
   const res = await fetch(buildUrl(`/admin/properties/${id}`), {
     method: 'DELETE',
     headers: getAuthHeader(),

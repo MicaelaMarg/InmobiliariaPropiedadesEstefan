@@ -1,7 +1,11 @@
 // Cliente API base. Usa config para normalizar la URL (siempre termina en /api).
-import { API_BASE_URL } from '../config/api'
+import { API_BASE_URL, USE_MOCK, assertApiConfigured } from '../config/api'
 
 const BASE_URL = API_BASE_URL
+if (!BASE_URL && !USE_MOCK) {
+  // En producción no debería ocurrir; lanzamos error claro
+  assertApiConfigured()
+}
 
 function getAuthHeaders() {
   const auth = localStorage.getItem('inmobiliaria_auth')
