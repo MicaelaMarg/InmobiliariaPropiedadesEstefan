@@ -62,6 +62,8 @@ function sanitizePayload(value = {}) {
   return {
     ...value,
     price: toNullableNumber(value.price),
+    mapLatitude: toNullableNumber(value.mapLatitude),
+    mapLongitude: toNullableNumber(value.mapLongitude),
     totalArea: toNullableNumber(value.totalArea),
     coveredArea: toNullableNumber(value.coveredArea),
     frontLength: toNullableNumber(value.frontLength),
@@ -124,6 +126,12 @@ onMounted(async () => {
 async function save() {
   if (!formData.value.title?.trim()) {
     error.value = 'El título es obligatorio.'
+    return
+  }
+  const hasLatitude = formData.value.mapLatitude !== '' && formData.value.mapLatitude !== null && formData.value.mapLatitude !== undefined
+  const hasLongitude = formData.value.mapLongitude !== '' && formData.value.mapLongitude !== null && formData.value.mapLongitude !== undefined
+  if (hasLatitude !== hasLongitude) {
+    error.value = 'Para usar ubicación exacta tenés que completar latitud y longitud.'
     return
   }
   if (formData.value.youtubeUrl?.trim() && !normalizeYouTubeUrl(formData.value.youtubeUrl)) {

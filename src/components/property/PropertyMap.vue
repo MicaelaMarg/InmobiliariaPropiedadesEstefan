@@ -8,12 +8,16 @@ const props = defineProps({
   },
 })
 
+const hasExactCoordinates = computed(() => (
+  Number.isFinite(Number(props.property?.mapLatitude)) &&
+  Number.isFinite(Number(props.property?.mapLongitude))
+))
+
 const mapQuery = computed(() => {
   const parts = [
     props.property?.address,
     props.property?.location,
     props.property?.city,
-    'Buenos Aires',
     'Argentina',
   ]
 
@@ -25,11 +29,17 @@ const mapQuery = computed(() => {
 })
 
 const embedUrl = computed(() => {
+  if (hasExactCoordinates.value) {
+    return `https://www.google.com/maps?q=${encodeURIComponent(`${props.property.mapLatitude},${props.property.mapLongitude}`)}&z=17&output=embed`
+  }
   if (!mapQuery.value) return ''
   return `https://www.google.com/maps?q=${encodeURIComponent(mapQuery.value)}&z=15&output=embed`
 })
 
 const directionsUrl = computed(() => {
+  if (hasExactCoordinates.value) {
+    return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${props.property.mapLatitude},${props.property.mapLongitude}`)}`
+  }
   if (!mapQuery.value) return ''
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapQuery.value)}`
 })

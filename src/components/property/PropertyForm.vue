@@ -1,5 +1,5 @@
 <script setup>
-import { ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import {
   PROPERTY_TYPES,
   OPERATIONS,
@@ -28,6 +28,8 @@ function createDefaultForm() {
   location: '',
   address: '',
   city: '',
+  mapLatitude: '',
+  mapLongitude: '',
   area: '',
   totalArea: '',
   coveredArea: '',
@@ -56,6 +58,8 @@ function createDefaultForm() {
 
 const form = ref(createDefaultForm())
 const featuresText = ref('')
+const mapsInput = ref('')
+const mapInputError = ref('')
 
 function arraysEqual(a = [], b = []) {
   return JSON.stringify(a) === JSON.stringify(b)
@@ -87,11 +91,17 @@ function syncFromModelValue(value = {}) {
     if (featuresText.value !== nextFeaturesText) {
       featuresText.value = nextFeaturesText
     }
+    const nextMapsInput = formatMapPin(normalized.mapLatitude, normalized.mapLongitude)
+    if (mapsInput.value !== nextMapsInput) {
+      mapsInput.value = nextMapsInput
+    }
     return
   }
 
   form.value = normalized
   featuresText.value = normalized.features.join(', ')
+  mapsInput.value = formatMapPin(normalized.mapLatitude, normalized.mapLongitude)
+  mapInputError.value = ''
 }
 
 watch(
@@ -117,6 +127,122 @@ watch(featuresText, (t) => {
   if (arraysEqual(form.value.features, nextFeatures)) return
   form.value = { ...form.value, features: nextFeatures }
 }, { immediate: true })
+
+const mapsPreviewUrl = computed(() => {
+  const lat = toCoordinateNumber(form.value.mapLatitude)
+  const lng = toCoordinateNumber(form.value.mapLongitude)
+  if (!isValidCoordinatePair(lat, lng)) return ''
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${lat},${lng}`)}`
+})
+
+function toCoordinateNumber(value) {
+  if (value === '' || value === null || value === undefined) return null
+  const numeric = Number(value)
+  return Number.isFinite(numeric) ? numeric : null
+}
+
+function isValidCoordinatePair(lat, lng) {
+  return lat !== null &&
+    lng !== null &&
+    lat >= -90 &&
+    lat <= 90 &&
+    lng >= -180 &&
+    lng <= 180
+}
+
+function normalizeCoordinate(value) {
+  const numeric = toCoordinateNumber(value)
+  return numeric === null ? null : Number(numeric.toFixed(6))
+}
+
+function formatMapPin(lat, lng) {
+  const normalizedLat = normalizeCoordinate(lat)
+  const normalizedLng = normalizeCoordinate(lng)
+  return isValidCoordinatePair(normalizedLat, normalizedLng)
+    ? `${normalizedLat}, ${normalizedLng}`
+    : ''
+}
+
+function extractCoordinates(raw = '') {
+  const value = String(raw || '').trim()
+  if (!value) return null
+
+  const directMatch = value.match(/(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)/)
+  if (directMatch) {
+    const lat = normalizeCoordinate(directMatch[1])
+    const lng = normalizeCoordinate(directMatch[2])
+    return isValidCoordinatePair(lat, lng) ? { lat, lng } : null
+  }
+
+  try {
+    const url = new URL(value)
+    const pathnameMatch = url.pathname.match(/@(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/)
+    if (pathnameMatch) {
+      const lat = normalizeCoordinate(pathnameMatch[1])
+      const lng = normalizeCoordinate(pathnameMatch[2])
+      return isValidCoordinatePair(lat, lng) ? { lat, lng } : null
+    }
+
+    const dataMatch = url.pathname.match(/!3d(-?\d+(?:\.\d+)?)!4d(-?\d+(?:\.\d+)?)/)
+    if (dataMatch) {
+      const lat = normalizeCoordinate(dataMatch[1])
+      const lng = normalizeCoordinate(dataMatch[2])
+      return isValidCoordinatePair(lat, lng) ? { lat, lng } : null
+    }
+
+    for (const key of ['q', 'll', 'query']) {
+      const candidate = url.searchParams.get(key)
+      if (!candidate) continue
+      const match = candidate.match(/(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)/)
+      if (!match) continue
+      const lat = normalizeCoordinate(match[1])
+      const lng = normalizeCoordinate(match[2])
+      if (isValidCoordinatePair(lat, lng)) {
+        return { lat, lng }
+      }
+    }
+  } catch {
+    return null
+  }
+
+  return null
+}
+
+function applyMapsInput() {
+  if (!mapsInput.value.trim()) {
+    mapInputError.value = ''
+    form.value = {
+      ...form.value,
+      mapLatitude: '',
+      mapLongitude: '',
+    }
+    return
+  }
+
+  const coordinates = extractCoordinates(mapsInput.value)
+  if (!coordinates) {
+    mapInputError.value = 'No pude leer ese enlace. Pegá un link completo de Google Maps o coordenadas tipo "-37.9901, -57.5467".'
+    return
+  }
+
+  mapInputError.value = ''
+  form.value = {
+    ...form.value,
+    mapLatitude: coordinates.lat,
+    mapLongitude: coordinates.lng,
+  }
+  mapsInput.value = formatMapPin(coordinates.lat, coordinates.lng)
+}
+
+function clearExactMapLocation() {
+  mapInputError.value = ''
+  mapsInput.value = ''
+  form.value = {
+    ...form.value,
+    mapLatitude: '',
+    mapLongitude: '',
+  }
+}
 </script>
 
 <template>
@@ -255,6 +381,63 @@ watch(featuresText, (t) => {
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">Ciudad</label>
           <input v-model="form.city" type="text" class="w-full rounded-xl border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-primary-500" />
+        </div>
+        <div class="md:col-span-2 rounded-2xl border border-emerald-100 bg-emerald-50/60 p-4">
+          <div class="flex items-start justify-between gap-3">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Ubicación exacta en Google Maps</label>
+              <p class="text-xs text-gray-500">
+                Ideal para lotes o propiedades sin numeración. Pegá un link completo de Google Maps con el pin exacto o coordenadas.
+              </p>
+            </div>
+            <button
+              v-if="form.mapLatitude !== '' || form.mapLongitude !== ''"
+              type="button"
+              class="text-xs font-medium text-gray-500 transition hover:text-red-600"
+              @click="clearExactMapLocation"
+            >
+              Limpiar punto
+            </button>
+          </div>
+
+          <div class="mt-3 flex flex-col gap-3 md:flex-row">
+            <input
+              v-model="mapsInput"
+              type="text"
+              class="w-full rounded-xl border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-primary-500"
+              placeholder="Pegá link de Google Maps o coordenadas"
+            />
+            <button
+              type="button"
+              class="rounded-xl bg-emerald-700 px-4 py-2 text-sm font-medium text-white transition hover:bg-emerald-800"
+              @click="applyMapsInput"
+            >
+              Usar ubicación exacta
+            </button>
+          </div>
+
+          <p v-if="mapInputError" class="mt-2 text-sm text-red-600">{{ mapInputError }}</p>
+
+          <div class="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
+            <div>
+              <label class="block text-xs font-medium text-gray-700 mb-1">Latitud</label>
+              <input v-model.number="form.mapLatitude" type="number" step="0.000001" class="w-full rounded-xl border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-primary-500" placeholder="-37.990100" />
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-gray-700 mb-1">Longitud</label>
+              <input v-model.number="form.mapLongitude" type="number" step="0.000001" class="w-full rounded-xl border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-primary-500" placeholder="-57.546700" />
+            </div>
+          </div>
+
+          <a
+            v-if="mapsPreviewUrl"
+            :href="mapsPreviewUrl"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="mt-3 inline-flex items-center gap-2 text-sm font-medium text-emerald-800 transition hover:text-emerald-900"
+          >
+            Ver punto exacto en Google Maps
+          </a>
         </div>
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">Superficie total (m²)</label>

@@ -16,6 +16,8 @@ public class Property {
   public String location;
   public String address;
   public String city;
+  public Double mapLatitude;
+  public Double mapLongitude;
   public String area;
   public Double totalArea;
   public Double coveredArea;

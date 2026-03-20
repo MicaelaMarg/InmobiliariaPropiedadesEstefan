@@ -105,6 +105,8 @@ public final class Database {
         location varchar(255),
         address varchar(255),
         city varchar(120),
+        map_latitude double,
+        map_longitude double,
         area varchar(120),
         total_area double,
         covered_area double,
@@ -218,6 +220,8 @@ public final class Database {
     sample.location = "Centro";
     sample.address = "Av. Principal 123";
     sample.city = "San Isidro";
+    sample.mapLatitude = -34.4729d;
+    sample.mapLongitude = -58.5138d;
     sample.area = "Centro";
     sample.totalArea = 180d;
     sample.coveredArea = 120d;
@@ -342,6 +346,18 @@ public final class Database {
       "property_images",
       "idx_property_images_property_order",
       "create index idx_property_images_property_order on property_images (property_id, is_primary, display_order)"
+    );
+    ensureColumnExists(
+      connection,
+      "properties",
+      "map_latitude",
+      "alter table properties add column map_latitude double"
+    );
+    ensureColumnExists(
+      connection,
+      "properties",
+      "map_longitude",
+      "alter table properties add column map_longitude double"
     );
     ensureColumnExists(
       connection,
