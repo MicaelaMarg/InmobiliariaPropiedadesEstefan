@@ -5,7 +5,6 @@ import com.cloudinary.utils.ObjectUtils;
 import com.inmobiliaria.api.model.PropertyImage;
 import jakarta.servlet.http.Part;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.Map;
 
 public final class CloudinaryImageService {
@@ -35,9 +34,10 @@ public final class CloudinaryImageService {
       filePart.getSubmittedFileName()
     );
 
-    try (InputStream inputStream = filePart.getInputStream()) {
+    try {
+      byte[] bytes = filePart.getInputStream().readAllBytes();
       Map<?, ?> uploadResult = getCloudinary().uploader().upload(
-        inputStream,
+        bytes,
         ObjectUtils.asMap(
           "resource_type", "image",
           "folder", "inmobiliaria/properties",
