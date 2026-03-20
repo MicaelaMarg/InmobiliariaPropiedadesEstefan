@@ -73,6 +73,18 @@ function isFormDataPayload(value) {
   return typeof FormData !== 'undefined' && value instanceof FormData
 }
 
+async function getResponseErrorMessage(response, fallbackMessage) {
+  try {
+    const data = await response.json()
+    if (typeof data?.error === 'string' && data.error.trim()) {
+      return data.error
+    }
+  } catch {
+    // Ignorar cuerpo no JSON o vacio.
+  }
+  return fallbackMessage
+}
+
 async function parseMockAdminPayload(data) {
   if (!isFormDataPayload(data)) {
     return data
@@ -264,7 +276,7 @@ export async function createProperty(data) {
     headers,
     body: isFormDataPayload(data) ? data : JSON.stringify(data),
   })
-  if (!res.ok) throw new Error('Error al crear propiedad')
+  if (!res.ok) throw new Error(await getResponseErrorMessage(res, 'Error al crear propiedad'))
   return res.json()
 }
 
@@ -288,7 +300,7 @@ export async function updateProperty(id, data) {
     headers,
     body: isFormDataPayload(data) ? data : JSON.stringify(data),
   })
-  if (!res.ok) throw new Error('Error al actualizar propiedad')
+  if (!res.ok) throw new Error(await getResponseErrorMessage(res, 'Error al actualizar propiedad'))
   return res.json()
 }
 

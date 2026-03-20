@@ -66,6 +66,8 @@ public class AdminPropertiesServlet extends HttpServlet {
     try {
       Property payload = readPayload(req);
       JsonUtil.writeJson(resp, HttpServletResponse.SC_CREATED, repository.create(payload));
+    } catch (IllegalArgumentException e) {
+      JsonUtil.writeError(resp, HttpServletResponse.SC_BAD_REQUEST, e.getMessage() != null ? e.getMessage() : "Solicitud invalida");
     } catch (Exception e) {
       e.printStackTrace(System.err);
       String msg = e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
@@ -89,6 +91,8 @@ public class AdminPropertiesServlet extends HttpServlet {
         return;
       }
       JsonUtil.writeJson(resp, HttpServletResponse.SC_OK, updated);
+    } catch (IllegalArgumentException e) {
+      JsonUtil.writeError(resp, HttpServletResponse.SC_BAD_REQUEST, e.getMessage() != null ? e.getMessage() : "Solicitud invalida");
     } catch (Exception e) {
       e.printStackTrace(System.err);
       String msg = e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
