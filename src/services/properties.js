@@ -9,10 +9,12 @@ let mockList = null
 
 function normalizeProperty(item = {}) {
   return {
+    ...item,
+    showPrice: item.showPrice ?? true,
+    hasExpenses: item.hasExpenses ?? false,
     highlightedMessages: Array.isArray(item.highlightedMessages) ? item.highlightedMessages : [],
     paymentOptions: Array.isArray(item.paymentOptions) ? item.paymentOptions : [],
     services: Array.isArray(item.services) ? item.services : [],
-    ...item,
   }
 }
 

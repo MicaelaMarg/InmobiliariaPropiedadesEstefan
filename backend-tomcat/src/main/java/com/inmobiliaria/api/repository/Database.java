@@ -101,6 +101,7 @@ public final class Database {
         operation varchar(80),
         price double,
         currency varchar(16),
+        show_price boolean not null default true,
         location varchar(255),
         address varchar(255),
         city varchar(120),
@@ -122,6 +123,7 @@ public final class Database {
         highlighted_messages text,
         payment_options text,
         services text,
+        has_expenses boolean not null default false,
         contact_phone varchar(120),
         contact_email varchar(255),
         observations text,
@@ -212,6 +214,7 @@ public final class Database {
     sample.operation = "venta";
     sample.price = 185000d;
     sample.currency = "USD";
+    sample.showPrice = true;
     sample.location = "Centro";
     sample.address = "Av. Principal 123";
     sample.city = "San Isidro";
@@ -228,6 +231,7 @@ public final class Database {
     sample.status = "available";
     sample.isPublished = true;
     sample.isFeatured = true;
+    sample.hasExpenses = false;
     sample.contactPhone = "+54 11 1234-5678";
     sample.contactEmail = "admin@inmobiliaria.com";
     sample.observations = "";
@@ -342,6 +346,12 @@ public final class Database {
     ensureColumnExists(
       connection,
       "properties",
+      "show_price",
+      "alter table properties add column show_price boolean not null default true"
+    );
+    ensureColumnExists(
+      connection,
+      "properties",
       "youtube_url",
       "alter table properties add column youtube_url varchar(500)"
     );
@@ -362,6 +372,12 @@ public final class Database {
       "properties",
       "services",
       "alter table properties add column services text"
+    );
+    ensureColumnExists(
+      connection,
+      "properties",
+      "has_expenses",
+      "alter table properties add column has_expenses boolean not null default false"
     );
     ensureColumnExists(
       connection,

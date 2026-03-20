@@ -12,6 +12,7 @@ public class Property {
   public String operation;
   public Double price;
   public String currency;
+  public Boolean showPrice;
   public String location;
   public String address;
   public String city;
@@ -33,6 +34,7 @@ public class Property {
   public List<String> highlightedMessages = new ArrayList<>();
   public List<String> paymentOptions = new ArrayList<>();
   public List<String> services = new ArrayList<>();
+  public Boolean hasExpenses;
   public List<PropertyImage> images = new ArrayList<>();
   public String contactPhone;
   public String contactEmail;
