@@ -1,7 +1,7 @@
 <script setup>
 import { computed, onBeforeUnmount, watch, ref } from 'vue'
 import ResponsiveImage from '../ui/ResponsiveImage.vue'
-import { getImageUrl, sortPropertyImages } from '../../utils/propertyImages'
+import { getImageDimensions, getImageUrl, sortPropertyImages } from '../../utils/propertyImages'
 
 const props = defineProps({
   open: { type: Boolean, default: false },
@@ -17,6 +17,16 @@ const zoom = ref(1)
 const sortedImages = computed(() => sortPropertyImages(props.images))
 const currentImage = computed(() => sortedImages.value[currentIndex.value] || sortedImages.value[0] || null)
 const currentImageUrl = computed(() => getImageUrl(currentImage.value, 'large'))
+const currentImageDimensions = computed(() => getImageDimensions(currentImage.value))
+const isPortraitImage = computed(() => {
+  const { width, height } = currentImageDimensions.value
+  return Boolean(width && height && height > width)
+})
+const mainImageClass = computed(() => (
+  isPortraitImage.value
+    ? 'block h-auto w-auto max-h-[calc(100vh-8.5rem)] max-w-[min(82vw,900px)] object-contain md:max-h-[calc(100vh-7.5rem)]'
+    : 'block h-auto w-auto max-h-[calc(100vh-9.5rem)] max-w-[min(92vw,1400px)] object-contain md:max-h-[calc(100vh-8.5rem)]'
+))
 
 function clampIndex(index) {
   if (!sortedImages.value.length) return 0
@@ -131,7 +141,7 @@ onBeforeUnmount(() => {
           </div>
           </div>
 
-          <div class="flex min-h-0 flex-1 items-center gap-3 px-3 pb-3 md:gap-5 md:px-6 md:pb-6">
+          <div class="flex min-h-0 flex-1 items-center gap-3 px-3 pb-3 md:gap-5 md:px-5 md:pb-5">
             <button
               v-if="sortedImages.length > 1"
               type="button"
@@ -142,9 +152,17 @@ onBeforeUnmount(() => {
               ‹
             </button>
 
-            <div class="flex min-h-0 flex-1 flex-col gap-4">
-              <div class="relative min-h-0 flex-1 overflow-hidden rounded-[28px] border border-white/10 bg-white/5">
-                <div class="flex h-full w-full items-center justify-center overflow-auto p-3 md:p-6">
+            <div class="grid min-h-0 flex-1 gap-4 md:grid-cols-[minmax(0,1fr)_112px] md:items-stretch">
+              <div class="relative min-h-0 overflow-hidden rounded-[28px] border border-white/10 bg-white/5">
+                <img
+                  v-if="currentImageUrl"
+                  :src="currentImageUrl"
+                  alt=""
+                  aria-hidden="true"
+                  class="absolute inset-0 h-full w-full scale-110 object-cover opacity-10 blur-3xl"
+                />
+
+                <div class="flex h-full w-full items-center justify-center overflow-auto p-2 sm:p-4 md:p-5">
                   <div
                     class="flex items-center justify-center transition-transform duration-200 ease-out"
                     :style="{ transform: `scale(${zoom})`, transformOrigin: 'center center' }"
@@ -154,7 +172,7 @@ onBeforeUnmount(() => {
                       v-if="currentImageUrl"
                       :src="currentImageUrl"
                       :alt="`${alt} ${currentIndex + 1}`"
-                      class="block max-h-[calc(100vh-10rem)] max-w-full object-contain md:max-h-[calc(100vh-12rem)]"
+                      :class="mainImageClass"
                       loading="eager"
                       decoding="async"
                     />
@@ -181,12 +199,15 @@ onBeforeUnmount(() => {
                 </button>
               </div>
 
-              <div v-if="sortedImages.length > 1" class="flex gap-3 overflow-x-auto pb-1">
+              <div
+                v-if="sortedImages.length > 1"
+                class="flex gap-3 overflow-x-auto pb-1 md:max-h-[calc(100vh-9rem)] md:flex-col md:overflow-y-auto md:overflow-x-hidden md:pb-0"
+              >
                 <button
                   v-for="(image, index) in sortedImages"
                   :key="`${image.url || image.largeUrl}-${index}`"
                   type="button"
-                  class="relative h-20 w-24 flex-shrink-0 overflow-hidden rounded-2xl border-2 transition"
+                  class="relative h-20 w-24 flex-shrink-0 overflow-hidden rounded-2xl border-2 transition md:h-24 md:w-full"
                   :class="index === currentIndex ? 'border-white shadow-lg shadow-black/20' : 'border-white/10 opacity-70 hover:opacity-100'"
                   :aria-label="`Ver imagen ${index + 1}`"
                   @click="setIndex(index)"
