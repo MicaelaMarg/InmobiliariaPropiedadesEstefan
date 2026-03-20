@@ -1,7 +1,7 @@
 <script setup>
 import { computed, onBeforeUnmount, watch, ref } from 'vue'
 import ResponsiveImage from '../ui/ResponsiveImage.vue'
-import { sortPropertyImages } from '../../utils/propertyImages'
+import { getImageUrl, sortPropertyImages } from '../../utils/propertyImages'
 
 const props = defineProps({
   open: { type: Boolean, default: false },
@@ -16,6 +16,7 @@ const zoom = ref(1)
 
 const sortedImages = computed(() => sortPropertyImages(props.images))
 const currentImage = computed(() => sortedImages.value[currentIndex.value] || sortedImages.value[0] || null)
+const currentImageUrl = computed(() => getImageUrl(currentImage.value, 'large'))
 
 function clampIndex(index) {
   if (!sortedImages.value.length) return 0
@@ -145,17 +146,17 @@ onBeforeUnmount(() => {
               <div class="relative min-h-0 flex-1 overflow-hidden rounded-[28px] border border-white/10 bg-white/5">
                 <div class="flex h-full w-full items-center justify-center overflow-auto p-3 md:p-6">
                   <div
-                    class="h-full w-full max-w-full transition-transform duration-200 ease-out"
+                    class="flex items-center justify-center transition-transform duration-200 ease-out"
                     :style="{ transform: `scale(${zoom})`, transformOrigin: 'center center' }"
                     @dblclick="toggleZoom"
                   >
-                    <ResponsiveImage
-                      :image="currentImage"
+                    <img
+                      v-if="currentImageUrl"
+                      :src="currentImageUrl"
                       :alt="`${alt} ${currentIndex + 1}`"
-                      variant="large"
-                      :eager="true"
-                      :contain="true"
-                      class="h-full w-full"
+                      class="block max-h-[calc(100vh-10rem)] max-w-full object-contain md:max-h-[calc(100vh-12rem)]"
+                      loading="eager"
+                      decoding="async"
                     />
                   </div>
                 </div>
