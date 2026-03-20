@@ -469,7 +469,7 @@ public class PropertyRepository {
     image.width = getNullableInt(rs, "width");
     image.height = getNullableInt(rs, "height");
     image.thumbnailWidth = getNullableInt(rs, "thumbnail_width");
-    image.mediumWidth = null;
+    image.mediumWidth = getNullableInt(rs, "medium_width");
     image.largeWidth = getNullableInt(rs, "large_width");
     image.mimeType = rs.getString("mime_type");
     image.originalName = rs.getString("original_name");

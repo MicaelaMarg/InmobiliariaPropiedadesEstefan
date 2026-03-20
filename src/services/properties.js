@@ -69,6 +69,49 @@ function buildUrl(path, filters = {}) {
   return `${API_BASE_URL}${path}${query ? `?${query}` : ''}`
 }
 
+function isFormDataPayload(value) {
+  return typeof FormData !== 'undefined' && value instanceof FormData
+}
+
+async function parseMockAdminPayload(data) {
+  if (!isFormDataPayload(data)) {
+    return data
+  }
+
+  const rawProperty = data.get('property')
+  const parsed = rawProperty ? JSON.parse(String(rawProperty)) : {}
+  const filesByToken = new Map()
+
+  for (const [key, value] of data.entries()) {
+    if (!key.startsWith('imageFile_') || !(value instanceof File)) continue
+    filesByToken.set(key.slice('imageFile_'.length), value)
+  }
+
+  const images = await Promise.all((parsed.images || []).map(async (image) => {
+    if (!image?.uploadToken) return image
+
+    const file = filesByToken.get(image.uploadToken)
+    if (!file) return image
+
+    const objectUrl = URL.createObjectURL(file)
+    return {
+      ...image,
+      url: objectUrl,
+      thumbnailUrl: objectUrl,
+      mediumUrl: objectUrl,
+      largeUrl: objectUrl,
+      placeholderUrl: null,
+      mimeType: file.type || image.mimeType || null,
+      originalName: file.name || image.originalName || null,
+    }
+  }))
+
+  return {
+    ...parsed,
+    images,
+  }
+}
+
 function slugify(text) {
   return text
     .toLowerCase()
@@ -194,15 +237,16 @@ export async function fetchPropertyById(id) {
 
 export async function createProperty(data) {
   if (USE_MOCK) {
+    const payload = await parseMockAdminPayload(data)
     const list = getMockList()
     const id = String(Math.max(...list.map(p => parseInt(p.id, 10) || 0), 0) + 1)
-    const slug = data.slug || `${slugify(data.title || 'propiedad')}-${id}`
+    const slug = payload.slug || `${slugify(payload.title || 'propiedad')}-${id}`
     const now = new Date().toISOString()
     const newProp = {
-      ...data,
+      ...payload,
       id,
       slug,
-      images: data.images || [],
+      images: payload.images || [],
       createdAt: now,
       updatedAt: now,
     }
@@ -212,10 +256,13 @@ export async function createProperty(data) {
   }
 
   assertApiConfigured()
+  const headers = isFormDataPayload(data)
+    ? { ...getAuthHeader() }
+    : { 'Content-Type': 'application/json', ...getAuthHeader() }
   const res = await fetch(buildUrl('/admin/properties'), {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
-    body: JSON.stringify(data),
+    headers,
+    body: isFormDataPayload(data) ? data : JSON.stringify(data),
   })
   if (!res.ok) throw new Error('Error al crear propiedad')
   return res.json()
@@ -223,19 +270,23 @@ export async function createProperty(data) {
 
 export async function updateProperty(id, data) {
   if (USE_MOCK) {
+    const payload = await parseMockAdminPayload(data)
     const list = getMockList()
     const idx = list.findIndex(p => p.id === id)
     if (idx === -1) return null
-    list[idx] = { ...list[idx], ...data, updatedAt: new Date().toISOString() }
+    list[idx] = { ...list[idx], ...payload, updatedAt: new Date().toISOString() }
     persistMockList()
     return list[idx]
   }
 
   assertApiConfigured()
+  const headers = isFormDataPayload(data)
+    ? { ...getAuthHeader() }
+    : { 'Content-Type': 'application/json', ...getAuthHeader() }
   const res = await fetch(buildUrl(`/admin/properties/${id}`), {
     method: 'PUT',
-    headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
-    body: JSON.stringify(data),
+    headers,
+    body: isFormDataPayload(data) ? data : JSON.stringify(data),
   })
   if (!res.ok) throw new Error('Error al actualizar propiedad')
   return res.json()

@@ -1,5 +1,5 @@
 <script setup>
-import { ref, watch } from 'vue'
+import { onBeforeUnmount, ref, watch } from 'vue'
 import { getImageUrl } from '../../utils/propertyImages'
 
 const props = defineProps({
@@ -10,12 +10,6 @@ const props = defineProps({
 const emit = defineEmits(['update:modelValue'])
 const input = ref(null)
 const uploading = ref(false)
-const IMAGE_DIMENSIONS = {
-  thumbnail: 320,
-  large: 1440,
-  placeholder: 24,
-}
-let preferredMimeTypePromise = null
 
 const images = ref(props.modelValue.length ? props.modelValue.map(normalizeStoredImage) : [])
 
@@ -31,10 +25,13 @@ function emitValue() {
 function normalizeStoredImage(image = {}) {
   return {
     ...image,
-    url: image.url || image.largeUrl || image.mediumUrl || image.thumbnailUrl || '',
-    thumbnailUrl: image.thumbnailUrl || image.mediumUrl || image.url || '',
+    uploadToken: image.uploadToken || null,
+    file: image.file instanceof File ? image.file : null,
+    objectUrl: image.objectUrl || null,
+    url: image.url || image.largeUrl || image.mediumUrl || image.thumbnailUrl || image.objectUrl || '',
+    thumbnailUrl: image.thumbnailUrl || image.mediumUrl || image.url || image.objectUrl || '',
     mediumUrl: image.mediumUrl || null,
-    largeUrl: image.largeUrl || image.url || image.mediumUrl || image.thumbnailUrl || '',
+    largeUrl: image.largeUrl || image.url || image.mediumUrl || image.thumbnailUrl || image.objectUrl || '',
     placeholderUrl: image.placeholderUrl || null,
     width: image.width ?? null,
     height: image.height ?? null,
@@ -50,6 +47,10 @@ function normalizeStoredImage(image = {}) {
 
 function serializeImage(image = {}, index = 0) {
   return {
+    id: image.id ?? null,
+    uploadToken: image.uploadToken || null,
+    file: image.file instanceof File ? image.file : null,
+    objectUrl: image.objectUrl || null,
     url: image.largeUrl || image.url || image.mediumUrl || image.thumbnailUrl || '',
     thumbnailUrl: image.thumbnailUrl || image.mediumUrl || image.url || '',
     mediumUrl: image.mediumUrl || null,
@@ -67,142 +68,56 @@ function serializeImage(image = {}, index = 0) {
   }
 }
 
-function fileToDataUrl(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader()
-    reader.onload = () => resolve(reader.result)
-    reader.onerror = () => reject(new Error('No se pudo leer la imagen'))
-    reader.readAsDataURL(file)
-  })
+function revokeObjectUrl(image) {
+  if (image?.objectUrl && image.objectUrl.startsWith('blob:')) {
+    URL.revokeObjectURL(image.objectUrl)
+  }
 }
 
-function blobToDataUrl(blob) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader()
-    reader.onload = () => resolve(reader.result)
-    reader.onerror = () => reject(new Error('No se pudo generar la imagen optimizada'))
-    reader.readAsDataURL(blob)
-  })
+function cleanupObjectUrls(list = []) {
+  list.forEach(revokeObjectUrl)
 }
 
-function loadImage(file) {
+function loadImage(url) {
   return new Promise((resolve, reject) => {
-    const objectUrl = URL.createObjectURL(file)
     const image = new Image()
     image.onload = () => {
-      URL.revokeObjectURL(objectUrl)
       resolve(image)
     }
     image.onerror = () => {
-      URL.revokeObjectURL(objectUrl)
       reject(new Error('No se pudo procesar la imagen'))
     }
-    image.src = objectUrl
+    image.src = url
   })
 }
 
-async function getPreferredMimeType() {
-  if (!preferredMimeTypePromise) {
-    preferredMimeTypePromise = Promise.resolve().then(() => {
-      const canvas = document.createElement('canvas')
-      canvas.width = 1
-      canvas.height = 1
-      return canvas.toDataURL('image/webp').startsWith('data:image/webp') ? 'image/webp' : 'image/jpeg'
-    })
+function createUploadToken() {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID()
   }
-
-  return preferredMimeTypePromise
+  return `img_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`
 }
 
-async function canvasToDataUrl(canvas, mimeType, quality) {
-  if (!canvas.toBlob) {
-    return canvas.toDataURL(mimeType, quality)
-  }
-
-  return new Promise((resolve) => {
-    canvas.toBlob(async (blob) => {
-      if (!blob) {
-        resolve(canvas.toDataURL(mimeType, quality))
-        return
-      }
-
-      resolve(await blobToDataUrl(blob))
-    }, mimeType, quality)
-  })
-}
-
-async function createVariant(image, maxDimension, mimeType, quality) {
-  const longestSide = Math.max(image.width, image.height)
-  const scale = longestSide > maxDimension ? maxDimension / longestSide : 1
-  const canvas = document.createElement('canvas')
-  canvas.width = Math.max(1, Math.round(image.width * scale))
-  canvas.height = Math.max(1, Math.round(image.height * scale))
-
-  const context = canvas.getContext('2d')
-  if (!context) {
-    return {
-      dataUrl: null,
-      width: image.width,
-      height: image.height,
-    }
-  }
-
-  context.imageSmoothingEnabled = true
-  context.imageSmoothingQuality = 'high'
-  context.drawImage(image, 0, 0, canvas.width, canvas.height)
-
+async function fileToUploadImage(file) {
+  const objectUrl = URL.createObjectURL(file)
+  const image = await loadImage(objectUrl)
   return {
-    dataUrl: await canvasToDataUrl(canvas, mimeType, quality),
-    width: canvas.width,
-    height: canvas.height,
-  }
-}
-
-async function fileToOptimizedImage(file) {
-  const image = await loadImage(file)
-  const mimeType = await getPreferredMimeType()
-  const quality = mimeType === 'image/webp'
-    ? { thumbnail: 0.64, large: 0.76 }
-    : { thumbnail: 0.68, large: 0.8 }
-
-  const [thumbnail, large, placeholder] = await Promise.all([
-    createVariant(image, IMAGE_DIMENSIONS.thumbnail, mimeType, quality.thumbnail),
-    createVariant(image, IMAGE_DIMENSIONS.large, mimeType, quality.large),
-    createVariant(image, IMAGE_DIMENSIONS.placeholder, 'image/jpeg', 0.45),
-  ])
-
-  if (!large.dataUrl) {
-    const url = await fileToDataUrl(file)
-    return normalizeStoredImage({
-      url,
-      thumbnailUrl: url,
-      mediumUrl: null,
-      largeUrl: url,
-      placeholderUrl: url,
-      width: image.width,
-      height: image.height,
-      thumbnailWidth: image.width,
-      mediumWidth: null,
-      largeWidth: image.width,
-      mimeType: file.type || 'image/jpeg',
-      originalName: file.name,
-    })
-  }
-
-  return normalizeStoredImage({
-    url: large.dataUrl,
-    thumbnailUrl: thumbnail.dataUrl || large.dataUrl,
-    mediumUrl: null,
-    largeUrl: large.dataUrl,
-    placeholderUrl: placeholder.dataUrl || null,
+    uploadToken: createUploadToken(),
+    file,
+    objectUrl,
+    url: objectUrl,
+    thumbnailUrl: objectUrl,
+    mediumUrl: objectUrl,
+    largeUrl: objectUrl,
+    placeholderUrl: null,
     width: image.width,
     height: image.height,
-    thumbnailWidth: thumbnail.width,
-    mediumWidth: null,
-    largeWidth: large.width,
-    mimeType,
+    thumbnailWidth: image.width,
+    mediumWidth: image.width,
+    largeWidth: image.width,
+    mimeType: file.type || 'image/jpeg',
     originalName: file.name,
-  })
+  }
 }
 
 async function addFiles(files) {
@@ -212,7 +127,7 @@ async function addFiles(files) {
   try {
     for (const file of toAdd) {
       if (!file.type.startsWith('image/')) continue
-      const nextImage = await fileToOptimizedImage(file)
+      const nextImage = await fileToUploadImage(file)
       images.value.push({
         ...nextImage,
         order: images.value.length,
@@ -226,6 +141,7 @@ async function addFiles(files) {
 }
 
 function remove(i) {
+  revokeObjectUrl(images.value[i])
   images.value.splice(i, 1)
   if (images.value.length && !images.value.some(img => img.isPrimary)) images.value[0].isPrimary = true
   emitValue()
@@ -249,6 +165,10 @@ function move(i, delta) {
 function triggerInput() {
   input.value?.click()
 }
+
+onBeforeUnmount(() => {
+  cleanupObjectUrls(images.value)
+})
 </script>
 
 <template>
@@ -268,8 +188,7 @@ function triggerInput() {
       </button>
     </div>
     <p class="text-xs text-gray-500">
-      Máximo {{ maxFiles }} archivos. Se generan automáticamente miniatura, versión media, versión grande y placeholder suave.
-      Se prioriza WebP cuando el navegador lo soporta y se conserva la proporción original.
+      Máximo {{ maxFiles }} archivos. Las imágenes nuevas se envían como archivos reales y el backend guarda URLs HTTPS en Cloudinary.
     </p>
     <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
       <div

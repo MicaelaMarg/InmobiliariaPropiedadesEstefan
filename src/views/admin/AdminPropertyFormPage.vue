@@ -78,11 +78,13 @@ function sanitizePayload(value = {}) {
 function normalizeImageForComparison(image = {}, index = 0) {
   return {
     id: image.id ?? null,
-    url: image.url || image.largeUrl || image.mediumUrl || image.thumbnailUrl || '',
-    thumbnailUrl: image.thumbnailUrl || image.mediumUrl || image.url || '',
+    uploadToken: image.uploadToken ?? null,
+    hasLocalFile: image.file instanceof File,
+    url: image.file instanceof File ? '' : image.url || image.largeUrl || image.mediumUrl || image.thumbnailUrl || '',
+    thumbnailUrl: image.file instanceof File ? '' : image.thumbnailUrl || image.mediumUrl || image.url || '',
     mediumUrl: image.mediumUrl || null,
-    largeUrl: image.largeUrl || image.url || image.mediumUrl || image.thumbnailUrl || '',
-    placeholderUrl: image.placeholderUrl || null,
+    largeUrl: image.file instanceof File ? '' : image.largeUrl || image.url || image.mediumUrl || image.thumbnailUrl || '',
+    placeholderUrl: image.file instanceof File ? null : image.placeholderUrl || null,
     width: image.width ?? null,
     height: image.height ?? null,
     thumbnailWidth: image.thumbnailWidth ?? null,
@@ -97,6 +99,45 @@ function normalizeImageForComparison(image = {}, index = 0) {
 
 function createImagesSnapshot(list = []) {
   return JSON.stringify((list || []).map((image, index) => normalizeImageForComparison(image, index)))
+}
+
+function buildImagePayloadItem(image = {}, index = 0) {
+  const hasLocalFile = image.file instanceof File
+  return {
+    id: image.id ?? null,
+    uploadToken: hasLocalFile ? image.uploadToken || `image_${index}` : null,
+    url: hasLocalFile ? null : image.largeUrl || image.url || image.mediumUrl || image.thumbnailUrl || '',
+    thumbnailUrl: hasLocalFile ? null : image.thumbnailUrl || image.mediumUrl || image.url || '',
+    mediumUrl: hasLocalFile ? null : image.mediumUrl || null,
+    largeUrl: hasLocalFile ? null : image.largeUrl || image.url || image.mediumUrl || image.thumbnailUrl || '',
+    placeholderUrl: hasLocalFile ? null : image.placeholderUrl || null,
+    width: image.width ?? null,
+    height: image.height ?? null,
+    thumbnailWidth: image.thumbnailWidth ?? null,
+    mediumWidth: image.mediumWidth ?? null,
+    largeWidth: image.largeWidth ?? image.width ?? null,
+    mimeType: image.mimeType || image.file?.type || null,
+    originalName: image.originalName || image.file?.name || null,
+    order: index,
+    isPrimary: index === 0 || image.isPrimary === true,
+  }
+}
+
+function buildMultipartPayload(propertyPayload, imagePayload, sourceImages) {
+  const formDataPayload = new FormData()
+  formDataPayload.append('property', JSON.stringify({
+    ...propertyPayload,
+    images: imagePayload,
+  }))
+
+  sourceImages.forEach((image, index) => {
+    if (!(image.file instanceof File)) return
+    const uploadToken = imagePayload[index]?.uploadToken
+    if (!uploadToken) return
+    formDataPayload.append(`imageFile_${uploadToken}`, image.file, image.file.name)
+  })
+
+  return formDataPayload
 }
 
 onMounted(async () => {
@@ -141,34 +182,29 @@ async function save() {
   error.value = ''
   saving.value = true
   try {
-    const normalizedImages = images.value.map((img, i) => ({
-      ...img,
-      url: img.largeUrl || img.url || img.mediumUrl || img.thumbnailUrl || '',
-      thumbnailUrl: img.thumbnailUrl || img.mediumUrl || img.url || '',
-      mediumUrl: img.mediumUrl || null,
-      largeUrl: img.largeUrl || img.url || img.mediumUrl || img.thumbnailUrl || '',
-      placeholderUrl: img.placeholderUrl || null,
-      order: i,
-      isPrimary: i === 0 || (img.isPrimary === true),
-    })).filter(img => img.url)
+    const normalizedImages = images.value.map((img, i) => buildImagePayloadItem(img, i))
+    const imagesChanged = !isEdit.value || createImagesSnapshot(images.value) !== originalImagesSnapshot.value
+    const hasNewFiles = images.value.some(img => img.file instanceof File)
 
     const payload = {
       ...sanitizePayload(formData.value),
       slug: formData.value.slug || slugify(formData.value.title),
     }
 
-    if (!isEdit.value || createImagesSnapshot(normalizedImages) !== originalImagesSnapshot.value) {
+    let requestBody = payload
+    if (imagesChanged) {
       payload.images = normalizedImages
+      requestBody = hasNewFiles ? buildMultipartPayload(payload, normalizedImages, images.value) : payload
     }
 
     if (isEdit.value) {
-      await updateProperty(route.params.id, payload)
+      await updateProperty(route.params.id, requestBody)
       router.push({
         name: 'AdminDashboard',
         query: { saved: payload.isPublished ? 'published' : 'updated' },
       })
     } else {
-      await createProperty(payload)
+      await createProperty(requestBody)
       router.push({
         name: 'AdminDashboard',
         query: { saved: payload.isPublished ? 'published' : 'created' },

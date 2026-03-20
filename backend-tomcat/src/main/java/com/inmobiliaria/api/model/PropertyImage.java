@@ -2,6 +2,7 @@ package com.inmobiliaria.api.model;
 
 public class PropertyImage {
   public String id;
+  public String uploadToken;
   public String url;
   public String thumbnailUrl;
   public String mediumUrl;
