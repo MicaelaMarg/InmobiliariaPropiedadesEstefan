@@ -51,7 +51,7 @@ public final class CloudinaryImageService {
     } catch (IOException e) {
       throw e;
     } catch (Exception e) {
-      throw new IOException("Error al subir imagen a Cloudinary", e);
+      throw new IOException("Error al subir imagen a Cloudinary: " + resolveErrorMessage(e), e);
     }
   }
 
@@ -154,5 +154,17 @@ public final class CloudinaryImageService {
       }
     }
     return null;
+  }
+
+  private static String resolveErrorMessage(Throwable throwable) {
+    Throwable current = throwable;
+    while (current != null) {
+      String message = current.getMessage();
+      if (message != null && !message.isBlank()) {
+        return message;
+      }
+      current = current.getCause();
+    }
+    return throwable != null ? throwable.getClass().getSimpleName() : "Error desconocido";
   }
 }
