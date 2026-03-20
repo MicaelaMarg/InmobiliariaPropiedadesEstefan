@@ -279,7 +279,7 @@ function triggerInput() {
         :class="img.isPrimary ? 'border-primary-500' : 'border-transparent'"
       >
         <div class="aspect-[4/3]">
-          <img :src="getImageUrl(img, 'thumbnail')" alt="" class="h-full w-full object-contain" loading="lazy" />
+          <img :src="getImageUrl(img, 'thumbnail')" alt="" class="h-full w-full object-cover" loading="lazy" />
         </div>
 
         <div class="absolute left-2 top-2 rounded-full bg-slate-950/65 px-2 py-1 text-[10px] font-medium uppercase tracking-[0.2em] text-white">
