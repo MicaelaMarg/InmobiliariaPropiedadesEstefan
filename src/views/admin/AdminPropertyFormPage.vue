@@ -16,6 +16,7 @@ const error = ref('')
 
 const formData = ref({})
 const images = ref([])
+const originalImagesSnapshot = ref('[]')
 
 function normalizeYouTubeUrl(value) {
   const raw = (value || '').trim()
@@ -72,6 +73,30 @@ function sanitizePayload(value = {}) {
   }
 }
 
+function normalizeImageForComparison(image = {}, index = 0) {
+  return {
+    id: image.id ?? null,
+    url: image.url || image.largeUrl || image.mediumUrl || image.thumbnailUrl || '',
+    thumbnailUrl: image.thumbnailUrl || image.mediumUrl || image.url || '',
+    mediumUrl: image.mediumUrl || null,
+    largeUrl: image.largeUrl || image.url || image.mediumUrl || image.thumbnailUrl || '',
+    placeholderUrl: image.placeholderUrl || null,
+    width: image.width ?? null,
+    height: image.height ?? null,
+    thumbnailWidth: image.thumbnailWidth ?? null,
+    mediumWidth: image.mediumWidth ?? null,
+    largeWidth: image.largeWidth ?? image.width ?? null,
+    mimeType: image.mimeType || null,
+    originalName: image.originalName || null,
+    order: image.order ?? index,
+    isPrimary: !!image.isPrimary,
+  }
+}
+
+function createImagesSnapshot(list = []) {
+  return JSON.stringify((list || []).map((image, index) => normalizeImageForComparison(image, index)))
+}
+
 onMounted(async () => {
   if (isEdit.value) {
     try {
@@ -79,6 +104,7 @@ onMounted(async () => {
       if (p) {
         formData.value = { ...p }
         images.value = p.images ? p.images.map(img => ({ ...img })) : []
+        originalImagesSnapshot.value = createImagesSnapshot(images.value)
       } else {
         error.value = 'Propiedad no encontrada'
       }
@@ -90,6 +116,7 @@ onMounted(async () => {
   } else {
     formData.value = {}
     images.value = []
+    originalImagesSnapshot.value = '[]'
     loading.value = false
   }
 })
@@ -106,20 +133,26 @@ async function save() {
   error.value = ''
   saving.value = true
   try {
+    const normalizedImages = images.value.map((img, i) => ({
+      ...img,
+      url: img.largeUrl || img.url || img.mediumUrl || img.thumbnailUrl || '',
+      thumbnailUrl: img.thumbnailUrl || img.mediumUrl || img.url || '',
+      mediumUrl: img.mediumUrl || null,
+      largeUrl: img.largeUrl || img.url || img.mediumUrl || img.thumbnailUrl || '',
+      placeholderUrl: img.placeholderUrl || null,
+      order: i,
+      isPrimary: i === 0 || (img.isPrimary === true),
+    })).filter(img => img.url)
+
     const payload = {
       ...sanitizePayload(formData.value),
       slug: formData.value.slug || slugify(formData.value.title),
-      images: images.value.map((img, i) => ({
-        ...img,
-        url: img.largeUrl || img.url || img.mediumUrl || img.thumbnailUrl || '',
-        thumbnailUrl: img.thumbnailUrl || img.mediumUrl || img.url || '',
-        mediumUrl: img.mediumUrl || null,
-        largeUrl: img.largeUrl || img.url || img.mediumUrl || img.thumbnailUrl || '',
-        placeholderUrl: img.placeholderUrl || null,
-        order: i,
-        isPrimary: i === 0 || (img.isPrimary === true),
-      })).filter(img => img.url),
     }
+
+    if (!isEdit.value || createImagesSnapshot(normalizedImages) !== originalImagesSnapshot.value) {
+      payload.images = normalizedImages
+    }
+
     if (isEdit.value) {
       await updateProperty(route.params.id, payload)
       router.push({

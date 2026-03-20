@@ -10,6 +10,7 @@ const props = defineProps({
   sizes: { type: String, default: '' },
   eager: { type: Boolean, default: false },
   contain: { type: Boolean, default: false },
+  containPortrait: { type: Boolean, default: false },
   useIntrinsicRatio: { type: Boolean, default: false },
   rootMargin: { type: String, default: '280px' },
   imgClass: { type: String, default: '' },
@@ -18,12 +19,22 @@ const props = defineProps({
 const container = ref(null)
 const isVisible = ref(props.eager)
 const isLoaded = ref(false)
+const naturalDimensions = ref({ width: null, height: null })
 let observer = null
 
 const placeholder = computed(() => getImagePlaceholder(props.image))
 const src = computed(() => getImageUrl(props.image, props.variant))
 const srcSet = computed(() => buildImageSrcSet(props.image, props.srcsetVariants))
 const dimensions = computed(() => getImageDimensions(props.image))
+const shouldContain = computed(() => {
+  if (props.contain) return true
+  if (!props.containPortrait) return false
+
+  const width = naturalDimensions.value.width || dimensions.value.width
+  const height = naturalDimensions.value.height || dimensions.value.height
+
+  return Boolean(width && height && height > width)
+})
 const wrapperStyle = computed(() => {
   if (!props.useIntrinsicRatio) return undefined
   if (!dimensions.value.width || !dimensions.value.height) return undefined
@@ -37,6 +48,7 @@ watch(
   () => props.image,
   () => {
     isLoaded.value = false
+    naturalDimensions.value = { width: null, height: null }
   },
   { deep: true }
 )
@@ -74,7 +86,12 @@ function observeVisibility() {
   observer.observe(container.value)
 }
 
-function onLoad() {
+function onLoad(event) {
+  const target = event?.target
+  naturalDimensions.value = {
+    width: target?.naturalWidth || null,
+    height: target?.naturalHeight || null,
+  }
   isLoaded.value = true
 }
 
@@ -96,7 +113,8 @@ onBeforeUnmount(() => {
       :src="placeholder"
       alt=""
       aria-hidden="true"
-      class="absolute inset-0 h-full w-full scale-110 object-cover blur-2xl transition-opacity duration-500"
+      class="absolute inset-0 h-full w-full blur-2xl transition-opacity duration-500"
+      :class="shouldContain ? 'object-contain scale-100' : 'object-cover scale-110'"
     />
 
     <div
@@ -114,7 +132,7 @@ onBeforeUnmount(() => {
       decoding="async"
       class="relative h-full w-full transition-all duration-500 ease-out"
       :class="[
-        contain ? 'object-contain' : 'object-cover',
+        shouldContain ? 'object-contain' : 'object-cover',
         isLoaded ? 'opacity-100 blur-0 scale-100' : 'opacity-0 blur-xl scale-[1.03]',
         imgClass,
       ]"

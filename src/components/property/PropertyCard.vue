@@ -85,6 +85,7 @@ function goToDetail() {
         variant="thumbnail"
         :srcset-variants="['thumbnail']"
         sizes="(min-width: 1024px) 30vw, (min-width: 640px) 50vw, 100vw"
+        :contain-portrait="true"
         class="h-full w-full"
         img-class="group-hover:scale-105"
       />

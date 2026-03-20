@@ -132,6 +132,7 @@ function onTouchEnd(event) {
               :alt="`${alt} miniatura ${i + 1}`"
               variant="thumbnail"
               :eager="i < 5"
+              :contain-portrait="true"
               class="h-full w-full"
             />
           </button>

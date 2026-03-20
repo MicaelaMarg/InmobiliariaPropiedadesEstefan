@@ -195,6 +195,7 @@ onBeforeUnmount(() => {
                     :alt="`${alt} miniatura ${index + 1}`"
                     variant="thumbnail"
                     :eager="index < 5"
+                    :contain-portrait="true"
                     class="h-full w-full"
                   />
                 </button>

@@ -209,7 +209,9 @@ public class PropertyRepository {
       statement.setLong(37, id);
       statement.executeUpdate();
 
-      saveImages(connection, id, merged.images);
+      if (changes.images != null) {
+        saveImages(connection, id, merged.images);
+      }
       return findById(id);
     }
   }
