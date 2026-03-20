@@ -60,6 +60,8 @@ const form = ref(createDefaultForm())
 const featuresText = ref('')
 const mapsInput = ref('')
 const mapInputError = ref('')
+const mapInputSuccess = ref('')
+const isSyncingMapsInput = ref(false)
 
 function arraysEqual(a = [], b = []) {
   return JSON.stringify(a) === JSON.stringify(b)
@@ -93,15 +95,20 @@ function syncFromModelValue(value = {}) {
     }
     const nextMapsInput = formatMapPin(normalized.mapLatitude, normalized.mapLongitude)
     if (mapsInput.value !== nextMapsInput) {
+      isSyncingMapsInput.value = true
       mapsInput.value = nextMapsInput
+      isSyncingMapsInput.value = false
     }
     return
   }
 
   form.value = normalized
   featuresText.value = normalized.features.join(', ')
+  isSyncingMapsInput.value = true
   mapsInput.value = formatMapPin(normalized.mapLatitude, normalized.mapLongitude)
+  isSyncingMapsInput.value = false
   mapInputError.value = ''
+  mapInputSuccess.value = ''
 }
 
 watch(
@@ -208,9 +215,18 @@ function extractCoordinates(raw = '') {
   return null
 }
 
-function applyMapsInput() {
+function applyMapsInput(options = {}) {
+  const {
+    clearOnEmpty = false,
+    showSuccess = false,
+    showError = true,
+    normalizeInput = true,
+  } = options
+
   if (!mapsInput.value.trim()) {
     mapInputError.value = ''
+    mapInputSuccess.value = ''
+    if (!clearOnEmpty) return
     form.value = {
       ...form.value,
       mapLatitude: '',
@@ -221,21 +237,30 @@ function applyMapsInput() {
 
   const coordinates = extractCoordinates(mapsInput.value)
   if (!coordinates) {
-    mapInputError.value = 'No pude leer ese enlace. Pegá un link completo de Google Maps o coordenadas tipo "-37.9901, -57.5467".'
+    mapInputSuccess.value = ''
+    mapInputError.value = showError
+      ? 'No pude leer ese enlace. Pegá un link completo de Google Maps o coordenadas tipo "-37.9901, -57.5467".'
+      : ''
     return
   }
 
   mapInputError.value = ''
+  mapInputSuccess.value = showSuccess ? 'Ubicación exacta detectada y cargada.' : ''
   form.value = {
     ...form.value,
     mapLatitude: coordinates.lat,
     mapLongitude: coordinates.lng,
   }
-  mapsInput.value = formatMapPin(coordinates.lat, coordinates.lng)
+  if (normalizeInput) {
+    isSyncingMapsInput.value = true
+    mapsInput.value = formatMapPin(coordinates.lat, coordinates.lng)
+    isSyncingMapsInput.value = false
+  }
 }
 
 function clearExactMapLocation() {
   mapInputError.value = ''
+  mapInputSuccess.value = ''
   mapsInput.value = ''
   form.value = {
     ...form.value,
@@ -243,6 +268,41 @@ function clearExactMapLocation() {
     mapLongitude: '',
   }
 }
+
+function handleMapsInputBlur() {
+  applyMapsInput({ clearOnEmpty: false, showSuccess: false, showError: true, normalizeInput: true })
+}
+
+function handleMapsPaste() {
+  window.setTimeout(() => {
+    applyMapsInput({ clearOnEmpty: false, showSuccess: true, showError: true, normalizeInput: true })
+  }, 0)
+}
+
+watch(mapsInput, (value) => {
+  if (isSyncingMapsInput.value) return
+
+  const raw = String(value || '').trim()
+  if (!raw) {
+    mapInputError.value = ''
+    mapInputSuccess.value = ''
+    return
+  }
+
+  const coordinates = extractCoordinates(raw)
+  if (!coordinates) {
+    mapInputSuccess.value = ''
+    return
+  }
+
+  mapInputError.value = ''
+  mapInputSuccess.value = 'Ubicación exacta detectada y cargada.'
+  form.value = {
+    ...form.value,
+    mapLatitude: coordinates.lat,
+    mapLongitude: coordinates.lng,
+  }
+}, { flush: 'post' })
 </script>
 
 <template>
@@ -387,7 +447,7 @@ function clearExactMapLocation() {
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Ubicación exacta en Google Maps</label>
               <p class="text-xs text-gray-500">
-                Ideal para lotes o propiedades sin numeración. Pegá un link completo de Google Maps con el pin exacto o coordenadas.
+                Ideal para lotes o propiedades sin numeración. Pegá un link de Google Maps y el punto exacto se carga automáticamente.
               </p>
             </div>
             <button
@@ -406,17 +466,14 @@ function clearExactMapLocation() {
               type="text"
               class="w-full rounded-xl border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-primary-500"
               placeholder="Pegá link de Google Maps o coordenadas"
+              @blur="handleMapsInputBlur"
+              @paste="handleMapsPaste"
+              @keydown.enter.prevent="handleMapsInputBlur"
             />
-            <button
-              type="button"
-              class="rounded-xl bg-emerald-700 px-4 py-2 text-sm font-medium text-white transition hover:bg-emerald-800"
-              @click="applyMapsInput"
-            >
-              Usar ubicación exacta
-            </button>
           </div>
 
           <p v-if="mapInputError" class="mt-2 text-sm text-red-600">{{ mapInputError }}</p>
+          <p v-else-if="mapInputSuccess" class="mt-2 text-sm text-emerald-700">{{ mapInputSuccess }}</p>
 
           <div class="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
             <div>
