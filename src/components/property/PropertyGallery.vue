@@ -56,29 +56,29 @@ function onTouchEnd(event) {
 
 <template>
   <div class="overflow-hidden rounded-[28px] border border-gray-200 bg-white shadow-card">
-    <div class="grid gap-4 p-3 md:p-5 xl:grid-cols-[minmax(0,1fr)_112px]">
-      <div class="order-2 xl:order-1">
+    <div class="grid gap-3 p-2 sm:gap-4 sm:p-3 md:p-5 xl:grid-cols-[minmax(0,1fr)_112px]">
+      <div class="order-1 min-w-0 xl:order-1">
         <div
-          class="group relative overflow-hidden rounded-[24px] bg-slate-950"
+          class="group relative overflow-hidden rounded-[20px] bg-slate-950 sm:rounded-[24px]"
           @touchstart.passive="onTouchStart"
           @touchend.passive="onTouchEnd"
         >
           <button
             type="button"
-            class="absolute right-3 top-3 z-10 rounded-full border border-white/15 bg-slate-950/55 px-4 py-2 text-xs font-medium uppercase tracking-[0.24em] text-white transition hover:bg-slate-950/75"
+            class="absolute right-2 top-2 z-10 rounded-full border border-white/15 bg-slate-950/55 px-3 py-1.5 text-[11px] font-medium uppercase tracking-[0.16em] text-white transition hover:bg-slate-950/75 sm:right-3 sm:top-3 sm:px-4 sm:py-2 sm:text-xs sm:tracking-[0.24em]"
             @click="openLightbox"
           >
             Ver grande
           </button>
 
-          <div class="absolute left-3 top-3 z-10 rounded-full border border-white/10 bg-black/35 px-3 py-1 text-xs font-medium text-white">
+          <div class="absolute left-2 top-2 z-10 rounded-full border border-white/10 bg-black/35 px-2.5 py-1 text-[11px] font-medium text-white sm:left-3 sm:top-3 sm:px-3 sm:text-xs">
             {{ currentIndex + 1 }} / {{ sortedImages.length }}
           </div>
 
           <button
             v-if="sortedImages.length > 1"
             type="button"
-            class="absolute left-3 top-1/2 z-10 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/15 bg-slate-950/50 text-xl text-white transition hover:bg-slate-950/70"
+            class="absolute left-2 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/15 bg-slate-950/50 text-xl text-white transition hover:bg-slate-950/70 sm:left-3 sm:h-11 sm:w-11"
             aria-label="Imagen anterior"
             @click="previous"
           >
@@ -88,7 +88,7 @@ function onTouchEnd(event) {
           <button
             v-if="sortedImages.length > 1"
             type="button"
-            class="absolute right-3 top-1/2 z-10 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/15 bg-slate-950/50 text-xl text-white transition hover:bg-slate-950/70"
+            class="absolute right-2 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/15 bg-slate-950/50 text-xl text-white transition hover:bg-slate-950/70 sm:right-3 sm:h-11 sm:w-11"
             aria-label="Imagen siguiente"
             @click="next"
           >
@@ -97,11 +97,11 @@ function onTouchEnd(event) {
 
           <button
             type="button"
-            class="flex w-full items-center justify-center px-3 py-3 md:px-6 md:py-5"
+            class="flex w-full items-center justify-center px-2 py-2 sm:px-3 sm:py-3 md:px-6 md:py-5"
             :aria-label="`Abrir galería de ${alt}`"
             @click="openLightbox"
           >
-            <div class="mx-auto flex h-[260px] w-full max-w-4xl items-center justify-center sm:h-[320px] md:h-[380px] lg:h-[430px]">
+            <div class="mx-auto flex h-[220px] w-full max-w-4xl items-center justify-center sm:h-[280px] md:h-[380px] lg:h-[430px]">
               <ResponsiveImage
                 :image="currentImage"
                 :alt="`${alt} ${currentIndex + 1}`"
@@ -116,13 +116,13 @@ function onTouchEnd(event) {
         </div>
       </div>
 
-      <div v-if="sortedImages.length > 1" class="order-1 xl:order-2">
-        <div class="flex gap-3 overflow-x-auto pb-1 xl:max-h-[35rem] xl:flex-col xl:overflow-y-auto xl:pb-0">
+      <div v-if="sortedImages.length > 1" class="order-2 min-w-0 xl:order-2">
+        <div class="flex gap-2 overflow-x-auto pb-1 xl:max-h-[35rem] xl:flex-col xl:gap-3 xl:overflow-y-auto xl:pb-0">
           <button
             v-for="(img, i) in sortedImages"
             :key="`${img.url || img.largeUrl}-${i}`"
             type="button"
-            class="relative h-20 w-24 flex-shrink-0 overflow-hidden rounded-2xl border-2 bg-gray-100 transition xl:h-24 xl:w-full"
+            class="relative h-16 w-20 flex-shrink-0 overflow-hidden rounded-xl border-2 bg-gray-100 transition sm:h-20 sm:w-24 sm:rounded-2xl xl:h-24 xl:w-full"
             :class="i === currentIndex ? 'border-emerald-700 shadow-sm' : 'border-transparent hover:border-emerald-200'"
             :aria-label="`Ver imagen ${i + 1}`"
             @click="setIndex(i)"
@@ -149,3 +149,4 @@ function onTouchEnd(event) {
     />
   </div>
 </template>
+
