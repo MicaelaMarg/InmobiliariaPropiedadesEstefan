@@ -596,15 +596,28 @@ watch(mapsInput, (value) => {
       <div class="space-y-4">
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
-          <textarea v-model="form.description" rows="4" class="w-full rounded-xl border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-primary-500" />
+          <textarea
+            v-model="form.description"
+            rows="8"
+            class="w-full rounded-xl border border-gray-300 px-3 py-3 leading-6 focus:ring-2 focus:ring-primary-500"
+          />
         </div>
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">Características (separadas por coma)</label>
-          <input v-model="featuresText" type="text" class="w-full rounded-xl border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-primary-500" placeholder="Jardín, Parrilla, Cochera" />
+          <textarea
+            v-model="featuresText"
+            rows="5"
+            class="w-full rounded-xl border border-gray-300 px-3 py-3 leading-6 focus:ring-2 focus:ring-primary-500"
+            placeholder="Jardín, Parrilla, Cochera"
+          />
         </div>
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">Observaciones internas</label>
-          <textarea v-model="form.observations" rows="2" class="w-full rounded-xl border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-primary-500" />
+          <textarea
+            v-model="form.observations"
+            rows="4"
+            class="w-full rounded-xl border border-gray-300 px-3 py-3 leading-6 focus:ring-2 focus:ring-primary-500"
+          />
         </div>
       </div>
     </section>
