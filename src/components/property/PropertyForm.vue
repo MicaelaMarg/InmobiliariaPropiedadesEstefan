@@ -1,5 +1,6 @@
 <script setup>
 import { computed, ref, watch } from 'vue'
+import AdminMapPicker from '../admin/AdminMapPicker.vue'
 import {
   PROPERTY_TYPES,
   OPERATIONS,
@@ -269,6 +270,19 @@ function clearExactMapLocation() {
   }
 }
 
+function handleMapPickerUpdate({ lat, lng }) {
+  mapInputError.value = ''
+  mapInputSuccess.value = 'Punto exacto seleccionado en el mapa.'
+  form.value = {
+    ...form.value,
+    mapLatitude: lat,
+    mapLongitude: lng,
+  }
+  isSyncingMapsInput.value = true
+  mapsInput.value = formatMapPin(lat, lng)
+  isSyncingMapsInput.value = false
+}
+
 function handleMapsInputBlur() {
   applyMapsInput({ clearOnEmpty: false, showSuccess: false, showError: true, normalizeInput: true })
 }
@@ -474,6 +488,14 @@ watch(mapsInput, (value) => {
 
           <p v-if="mapInputError" class="mt-2 text-sm text-red-600">{{ mapInputError }}</p>
           <p v-else-if="mapInputSuccess" class="mt-2 text-sm text-emerald-700">{{ mapInputSuccess }}</p>
+
+          <div class="mt-4">
+            <AdminMapPicker
+              :latitude="form.mapLatitude"
+              :longitude="form.mapLongitude"
+              @update:coordinates="handleMapPickerUpdate"
+            />
+          </div>
 
           <div class="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
             <div>

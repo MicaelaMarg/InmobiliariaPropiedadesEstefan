@@ -7,6 +7,10 @@ const props = defineProps({
   maxFiles: { type: Number, default: 20 },
 })
 
+const MAX_UPLOAD_DIMENSION = 1600
+const JPEG_QUALITY = 0.82
+const WEBP_QUALITY = 0.8
+
 const emit = defineEmits(['update:modelValue'])
 const input = ref(null)
 const uploading = ref(false)
@@ -91,6 +95,86 @@ function loadImage(url) {
   })
 }
 
+function createCanvas(width, height) {
+  const canvas = document.createElement('canvas')
+  canvas.width = width
+  canvas.height = height
+  return canvas
+}
+
+function detectPreferredMimeType() {
+  const canvas = createCanvas(1, 1)
+  try {
+    return canvas.toDataURL('image/webp').startsWith('data:image/webp')
+      ? 'image/webp'
+      : 'image/jpeg'
+  } catch {
+    return 'image/jpeg'
+  }
+}
+
+function canvasToBlob(canvas, mimeType, quality) {
+  return new Promise((resolve, reject) => {
+    canvas.toBlob((blob) => {
+      if (!blob) {
+        reject(new Error('No se pudo optimizar la imagen'))
+        return
+      }
+      resolve(blob)
+    }, mimeType, quality)
+  })
+}
+
+function buildOptimizedFilename(originalName = '', mimeType = 'image/jpeg') {
+  const baseName = originalName.replace(/\.[^.]+$/, '') || 'imagen'
+  const extension = mimeType === 'image/webp' ? 'webp' : 'jpg'
+  return `${baseName}.${extension}`
+}
+
+async function optimizeImageFile(file) {
+  const sourceUrl = URL.createObjectURL(file)
+
+  try {
+    const image = await loadImage(sourceUrl)
+    const longestSide = Math.max(image.width, image.height)
+    const scale = longestSide > MAX_UPLOAD_DIMENSION ? MAX_UPLOAD_DIMENSION / longestSide : 1
+    const width = Math.max(1, Math.round(image.width * scale))
+    const height = Math.max(1, Math.round(image.height * scale))
+    const canvas = createCanvas(width, height)
+    const context = canvas.getContext('2d')
+
+    if (!context) {
+      return {
+        file,
+        width: image.width,
+        height: image.height,
+      }
+    }
+
+    context.imageSmoothingEnabled = true
+    context.imageSmoothingQuality = 'high'
+    context.drawImage(image, 0, 0, width, height)
+
+    const mimeType = detectPreferredMimeType()
+    const quality = mimeType === 'image/webp' ? WEBP_QUALITY : JPEG_QUALITY
+    const blob = await canvasToBlob(canvas, mimeType, quality)
+
+    const optimizedFile = new File(
+      [blob],
+      buildOptimizedFilename(file.name, mimeType),
+      { type: mimeType, lastModified: Date.now() }
+    )
+
+    return {
+      file: optimizedFile,
+      width,
+      height,
+    }
+  } finally {
+    URL.revokeObjectURL(sourceUrl)
+  }
+}
+
 function createUploadToken() {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
     return crypto.randomUUID()
@@ -99,11 +183,12 @@ function createUploadToken() {
 }
 
 async function fileToUploadImage(file) {
-  const objectUrl = URL.createObjectURL(file)
+  const optimized = await optimizeImageFile(file)
+  const objectUrl = URL.createObjectURL(optimized.file)
   const image = await loadImage(objectUrl)
   return {
     uploadToken: createUploadToken(),
-    file,
+    file: optimized.file,
     objectUrl,
     url: objectUrl,
     thumbnailUrl: objectUrl,
@@ -115,7 +200,7 @@ async function fileToUploadImage(file) {
     thumbnailWidth: image.width,
     mediumWidth: image.width,
     largeWidth: image.width,
-    mimeType: file.type || 'image/jpeg',
+    mimeType: optimized.file.type || 'image/jpeg',
     originalName: file.name,
   }
 }
@@ -188,7 +273,7 @@ onBeforeUnmount(() => {
       </button>
     </div>
     <p class="text-xs text-gray-500">
-      Máximo {{ maxFiles }} archivos. Las imágenes nuevas se envían como archivos reales y el backend guarda URLs HTTPS en Cloudinary.
+      Máximo {{ maxFiles }} archivos. Antes de subir, las imágenes se optimizan para que el guardado sea más rápido y liviano.
     </p>
     <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
       <div
