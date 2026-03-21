@@ -29,6 +29,7 @@ function emitValue() {
 function normalizeStoredImage(image = {}) {
   return {
     ...image,
+    publicId: image.publicId || null,
     uploadToken: image.uploadToken || null,
     file: image.file instanceof File ? image.file : null,
     objectUrl: image.objectUrl || null,
@@ -52,6 +53,7 @@ function normalizeStoredImage(image = {}) {
 function serializeImage(image = {}, index = 0) {
   return {
     id: image.id ?? null,
+    publicId: image.publicId ?? null,
     uploadToken: image.uploadToken || null,
     file: image.file instanceof File ? image.file : null,
     objectUrl: image.objectUrl || null,

@@ -6,6 +6,13 @@ const MOCK_STORAGE_KEY = 'inmobiliaria_mock_properties'
 
 // Estado en memoria para mock (persiste create/update/delete durante la sesion)
 let mockList = null
+const CLOUDINARY_CONCURRENCY = 3
+const CLOUDINARY_WIDTHS = {
+  thumbnail: 320,
+  medium: 960,
+  large: 1440,
+  placeholder: 24,
+}
 
 function normalizeProperty(item = {}) {
   return {
@@ -73,11 +80,93 @@ function isFormDataPayload(value) {
   return typeof FormData !== 'undefined' && value instanceof FormData
 }
 
+function hasPendingImageUploads(images = []) {
+  return Array.isArray(images) && images.some(image => image?.file instanceof File)
+}
+
+function clampWidth(originalWidth, targetWidth) {
+  return Number.isFinite(originalWidth) ? Math.min(originalWidth, targetWidth) : targetWidth
+}
+
+function addCloudinaryTransformation(urlString, width) {
+  try {
+    const url = new URL(urlString)
+    const segments = url.pathname.split('/').filter(Boolean)
+    const uploadIdx = segments.indexOf('upload')
+    if (uploadIdx === -1) return urlString
+
+    const nextSegment = segments[uploadIdx + 1]
+    const hasVersionSegment = nextSegment && /^v\d+/.test(nextSegment)
+    const transformation = `f_auto,q_auto,c_limit,w_${width}`
+    const nextSegments = [...segments]
+
+    if (nextSegment && !hasVersionSegment) {
+      nextSegments[uploadIdx + 1] = transformation
+    } else {
+      nextSegments.splice(uploadIdx + 1, 0, transformation)
+    }
+
+    url.pathname = `/${nextSegments.join('/')}`
+    return url.toString()
+  } catch {
+    return urlString
+  }
+}
+
+function stripTransientImageFields(image = {}, index = 0) {
+  return {
+    id: image.id ?? null,
+    publicId: image.publicId ?? null,
+    uploadToken: null,
+    url: image.url || image.largeUrl || image.mediumUrl || image.thumbnailUrl || '',
+    thumbnailUrl: image.thumbnailUrl || image.mediumUrl || image.url || '',
+    mediumUrl: image.mediumUrl || null,
+    largeUrl: image.largeUrl || image.url || image.mediumUrl || image.thumbnailUrl || '',
+    placeholderUrl: image.placeholderUrl || null,
+    width: image.width ?? null,
+    height: image.height ?? null,
+    thumbnailWidth: image.thumbnailWidth ?? null,
+    mediumWidth: image.mediumWidth ?? null,
+    largeWidth: image.largeWidth ?? image.width ?? null,
+    mimeType: image.mimeType || null,
+    originalName: image.originalName || null,
+    order: image.order ?? index,
+    isPrimary: !!image.isPrimary,
+  }
+}
+
+function normalizeCloudinaryUpload(uploadResult = {}, sourceImage = {}, index = 0) {
+  const secureUrl = uploadResult.secure_url || uploadResult.url || ''
+  const width = Number.isFinite(uploadResult.width) ? uploadResult.width : null
+  return {
+    id: sourceImage.id ?? null,
+    publicId: uploadResult.public_id || null,
+    uploadToken: null,
+    url: secureUrl,
+    thumbnailUrl: secureUrl ? addCloudinaryTransformation(secureUrl, CLOUDINARY_WIDTHS.thumbnail) : '',
+    mediumUrl: secureUrl ? addCloudinaryTransformation(secureUrl, CLOUDINARY_WIDTHS.medium) : '',
+    largeUrl: secureUrl ? addCloudinaryTransformation(secureUrl, CLOUDINARY_WIDTHS.large) : '',
+    placeholderUrl: secureUrl ? addCloudinaryTransformation(secureUrl, CLOUDINARY_WIDTHS.placeholder) : null,
+    width,
+    height: Number.isFinite(uploadResult.height) ? uploadResult.height : null,
+    thumbnailWidth: clampWidth(width, CLOUDINARY_WIDTHS.thumbnail),
+    mediumWidth: clampWidth(width, CLOUDINARY_WIDTHS.medium),
+    largeWidth: clampWidth(width, CLOUDINARY_WIDTHS.large),
+    mimeType: sourceImage.file?.type || sourceImage.mimeType || null,
+    originalName: sourceImage.originalName || sourceImage.file?.name || null,
+    order: sourceImage.order ?? index,
+    isPrimary: !!sourceImage.isPrimary,
+  }
+}
+
 async function getResponseErrorMessage(response, fallbackMessage) {
   try {
     const data = await response.json()
     if (typeof data?.error === 'string' && data.error.trim()) {
       return data.error
+    }
+    if (typeof data?.error?.message === 'string' && data.error.message.trim()) {
+      return data.error.message
     }
   } catch {
     // Ignorar cuerpo no JSON o vacio.
@@ -87,7 +176,7 @@ async function getResponseErrorMessage(response, fallbackMessage) {
 
 async function parseMockAdminPayload(data) {
   if (!isFormDataPayload(data)) {
-    return data
+    return parseMockObjectPayload(data)
   }
 
   const rawProperty = data.get('property')
@@ -120,6 +209,113 @@ async function parseMockAdminPayload(data) {
 
   return {
     ...parsed,
+    images,
+  }
+}
+
+async function parseMockObjectPayload(data) {
+  if (!data || !Array.isArray(data.images)) {
+    return data
+  }
+
+  const images = await Promise.all(data.images.map(async (image, index) => {
+    if (!(image?.file instanceof File)) {
+      return stripTransientImageFields(image, index)
+    }
+
+    const objectUrl = URL.createObjectURL(image.file)
+    return {
+      ...stripTransientImageFields(image, index),
+      publicId: null,
+      url: objectUrl,
+      thumbnailUrl: objectUrl,
+      mediumUrl: objectUrl,
+      largeUrl: objectUrl,
+      placeholderUrl: null,
+      mimeType: image.file.type || image.mimeType || null,
+      originalName: image.file.name || image.originalName || null,
+    }
+  }))
+
+  return {
+    ...data,
+    images,
+  }
+}
+
+async function fetchCloudinarySignature() {
+  const res = await fetch(buildUrl('/admin/cloudinary/signature'), {
+    headers: getAuthHeader(),
+  })
+  if (!res.ok) {
+    throw new Error(await getResponseErrorMessage(res, 'Error al preparar la subida de imágenes'))
+  }
+  return res.json()
+}
+
+async function uploadImageToCloudinary(image, signature) {
+  const formData = new FormData()
+  formData.append('file', image.file)
+  formData.append('api_key', String(signature.apiKey))
+  formData.append('timestamp', String(signature.timestamp))
+  formData.append('signature', String(signature.signature))
+  formData.append('folder', String(signature.folder))
+  formData.append('use_filename', String(signature.useFilename))
+  formData.append('unique_filename', String(signature.uniqueFilename))
+  formData.append('overwrite', String(signature.overwrite))
+
+  const res = await fetch(signature.uploadUrl, {
+    method: 'POST',
+    body: formData,
+  })
+
+  if (!res.ok) {
+    throw new Error(await getResponseErrorMessage(res, 'Error al subir una imagen a Cloudinary'))
+  }
+
+  return res.json()
+}
+
+async function mapWithConcurrency(items, limit, worker) {
+  const results = new Array(items.length)
+  let nextIndex = 0
+
+  async function runWorker() {
+    while (nextIndex < items.length) {
+      const currentIndex = nextIndex++
+      results[currentIndex] = await worker(items[currentIndex], currentIndex)
+    }
+  }
+
+  const workerCount = Math.max(1, Math.min(limit, items.length))
+  await Promise.all(Array.from({ length: workerCount }, () => runWorker()))
+  return results
+}
+
+async function prepareAdminPayload(data) {
+  if (!data || !Array.isArray(data.images) || !hasPendingImageUploads(data.images)) {
+    if (!data || !Array.isArray(data?.images)) {
+      return data
+    }
+
+    return {
+      ...data,
+      images: data.images.map((image, index) => stripTransientImageFields(image, index)),
+    }
+  }
+
+  const signature = await fetchCloudinarySignature()
+  const images = await mapWithConcurrency(data.images, CLOUDINARY_CONCURRENCY, async (image, index) => {
+    if (!(image?.file instanceof File)) {
+      return stripTransientImageFields(image, index)
+    }
+
+    const uploadResult = await uploadImageToCloudinary(image, signature)
+    return normalizeCloudinaryUpload(uploadResult, image, index)
+  })
+
+  return {
+    ...data,
     images,
   }
 }
@@ -287,13 +483,14 @@ export async function createProperty(data) {
   }
 
   assertApiConfigured()
-  const headers = isFormDataPayload(data)
+  const payload = isFormDataPayload(data) ? data : await prepareAdminPayload(data)
+  const headers = isFormDataPayload(payload)
     ? { ...getAuthHeader() }
     : { 'Content-Type': 'application/json', ...getAuthHeader() }
   const res = await fetch(buildUrl('/admin/properties'), {
     method: 'POST',
     headers,
-    body: isFormDataPayload(data) ? data : JSON.stringify(data),
+    body: isFormDataPayload(payload) ? payload : JSON.stringify(payload),
   })
   if (!res.ok) throw new Error(await getResponseErrorMessage(res, 'Error al crear propiedad'))
   return res.json()
@@ -311,13 +508,14 @@ export async function updateProperty(id, data) {
   }
 
   assertApiConfigured()
-  const headers = isFormDataPayload(data)
+  const payload = isFormDataPayload(data) ? data : await prepareAdminPayload(data)
+  const headers = isFormDataPayload(payload)
     ? { ...getAuthHeader() }
     : { 'Content-Type': 'application/json', ...getAuthHeader() }
   const res = await fetch(buildUrl(`/admin/properties/${id}`), {
     method: 'PUT',
     headers,
-    body: isFormDataPayload(data) ? data : JSON.stringify(data),
+    body: isFormDataPayload(payload) ? payload : JSON.stringify(payload),
   })
   if (!res.ok) throw new Error(await getResponseErrorMessage(res, 'Error al actualizar propiedad'))
   return res.json()

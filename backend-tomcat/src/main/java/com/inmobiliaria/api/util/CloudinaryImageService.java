@@ -5,16 +5,28 @@ import com.cloudinary.utils.ObjectUtils;
 import com.inmobiliaria.api.model.PropertyImage;
 import jakarta.servlet.http.Part;
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 public final class CloudinaryImageService {
   private static final String CLOUDINARY_URL_ENV = "CLOUDINARY_URL";
+  private static final String PROPERTY_UPLOAD_FOLDER = "inmobiliaria/properties";
   private static final int THUMBNAIL_WIDTH = 320;
   private static final int MEDIUM_WIDTH = 960;
   private static final int LARGE_WIDTH = 1440;
   private static final int PLACEHOLDER_WIDTH = 24;
 
   private static volatile Cloudinary cloudinary;
+  private static volatile CloudinaryCredentials credentials;
 
   private CloudinaryImageService() {
   }
@@ -40,7 +52,7 @@ public final class CloudinaryImageService {
         bytes,
         ObjectUtils.asMap(
           "resource_type", "image",
-          "folder", "inmobiliaria/properties",
+          "folder", PROPERTY_UPLOAD_FOLDER,
           "use_filename", true,
           "unique_filename", true,
           "overwrite", false
@@ -70,6 +82,7 @@ public final class CloudinaryImageService {
     Integer originalHeight = integerValue(uploadResult.get("height"));
 
     PropertyImage image = new PropertyImage();
+    image.publicId = stringValue(uploadResult.get("public_id"));
     image.url = secureUrl;
     image.thumbnailUrl = applyCloudinaryTransformation(secureUrl, THUMBNAIL_WIDTH);
     image.mediumUrl = applyCloudinaryTransformation(secureUrl, MEDIUM_WIDTH);
@@ -87,6 +100,29 @@ public final class CloudinaryImageService {
     return image;
   }
 
+  public static Map<String, Object> createSignedUploadRequest() {
+    CloudinaryCredentials currentCredentials = getCredentials();
+    long timestamp = Instant.now().getEpochSecond();
+    Map<String, String> signatureParams = new LinkedHashMap<>();
+    signatureParams.put("folder", PROPERTY_UPLOAD_FOLDER);
+    signatureParams.put("overwrite", "false");
+    signatureParams.put("timestamp", String.valueOf(timestamp));
+    signatureParams.put("unique_filename", "true");
+    signatureParams.put("use_filename", "true");
+
+    return Map.of(
+      "cloudName", currentCredentials.cloudName(),
+      "apiKey", currentCredentials.apiKey(),
+      "folder", PROPERTY_UPLOAD_FOLDER,
+      "overwrite", "false",
+      "uniqueFilename", "true",
+      "useFilename", "true",
+      "timestamp", timestamp,
+      "signature", sign(signatureParams, currentCredentials.apiSecret()),
+      "uploadUrl", "https://api.cloudinary.com/v1_1/" + currentCredentials.cloudName() + "/image/upload"
+    );
+  }
+
   private static Cloudinary getCloudinary() {
     if (cloudinary != null) {
       return cloudinary;
@@ -97,13 +133,51 @@ public final class CloudinaryImageService {
         return cloudinary;
       }
 
+      cloudinary = new Cloudinary(getCredentials().cloudinaryUrl());
+      return cloudinary;
+    }
+  }
+
+  private static CloudinaryCredentials getCredentials() {
+    if (credentials != null) {
+      return credentials;
+    }
+
+    synchronized (CloudinaryImageService.class) {
+      if (credentials != null) {
+        return credentials;
+      }
+
       String cloudinaryUrl = System.getenv(CLOUDINARY_URL_ENV);
       if (cloudinaryUrl == null || cloudinaryUrl.isBlank()) {
         throw new IllegalStateException("CLOUDINARY_URL no esta configurado");
       }
 
-      cloudinary = new Cloudinary(cloudinaryUrl);
-      return cloudinary;
+      credentials = parseCredentials(cloudinaryUrl);
+      return credentials;
+    }
+  }
+
+  private static CloudinaryCredentials parseCredentials(String cloudinaryUrl) {
+    try {
+      URI uri = new URI(cloudinaryUrl);
+      String userInfo = uri.getUserInfo();
+      if (userInfo == null || !userInfo.contains(":")) {
+        throw new IllegalStateException("CLOUDINARY_URL no tiene api_key y api_secret válidas");
+      }
+
+      String[] parts = userInfo.split(":", 2);
+      String apiKey = parts[0];
+      String apiSecret = parts[1];
+      String cloudName = uri.getHost();
+
+      if (isBlank(apiKey) || isBlank(apiSecret) || isBlank(cloudName)) {
+        throw new IllegalStateException("CLOUDINARY_URL está incompleta");
+      }
+
+      return new CloudinaryCredentials(cloudinaryUrl, cloudName, apiKey, apiSecret);
+    } catch (URISyntaxException e) {
+      throw new IllegalStateException("CLOUDINARY_URL no tiene un formato válido", e);
     }
   }
 
@@ -156,6 +230,39 @@ public final class CloudinaryImageService {
     return null;
   }
 
+  private static String sign(Map<String, String> params, String apiSecret) {
+    List<Map.Entry<String, String>> entries = new ArrayList<>(params.entrySet());
+    entries.sort(Comparator.comparing(Map.Entry::getKey));
+
+    StringBuilder toSign = new StringBuilder();
+    for (Map.Entry<String, String> entry : entries) {
+      if (isBlank(entry.getValue())) {
+        continue;
+      }
+      if (toSign.length() > 0) {
+        toSign.append('&');
+      }
+      toSign.append(entry.getKey()).append('=').append(entry.getValue());
+    }
+    toSign.append(apiSecret);
+
+    try {
+      MessageDigest digest = MessageDigest.getInstance("SHA-1");
+      byte[] hash = digest.digest(toSign.toString().getBytes(StandardCharsets.UTF_8));
+      StringBuilder hex = new StringBuilder(hash.length * 2);
+      for (byte value : hash) {
+        hex.append(String.format("%02x", value));
+      }
+      return hex.toString();
+    } catch (NoSuchAlgorithmException e) {
+      throw new IllegalStateException("No se pudo firmar la subida a Cloudinary", e);
+    }
+  }
+
+  private static boolean isBlank(String value) {
+    return value == null || value.isBlank();
+  }
+
   private static String resolveErrorMessage(Throwable throwable) {
     Throwable current = throwable;
     while (current != null) {
@@ -166,5 +273,8 @@ public final class CloudinaryImageService {
       current = current.getCause();
     }
     return throwable != null ? throwable.getClass().getSimpleName() : "Error desconocido";
+  }
+
+  private record CloudinaryCredentials(String cloudinaryUrl, String cloudName, String apiKey, String apiSecret) {
   }
 }

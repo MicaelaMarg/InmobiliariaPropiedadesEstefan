@@ -376,7 +376,7 @@ public class PropertyRepository {
 
   private List<PropertyImage> findImages(Connection connection, long propertyId) throws SQLException {
     try (PreparedStatement statement = connection.prepareStatement("""
-      select url, thumbnail_url, medium_url, large_url, placeholder_url,
+      select public_id, url, thumbnail_url, medium_url, large_url, placeholder_url,
              id,
              width, height, thumbnail_width, medium_width, large_width,
              mime_type, original_name, display_order, is_primary
@@ -423,6 +423,7 @@ public class PropertyRepository {
 
     String sql = """
       select property_id, id, url, thumbnail_url, medium_url, large_url, placeholder_url,
+             public_id,
              width, height, thumbnail_width, medium_width, large_width,
              mime_type, original_name, display_order, is_primary
         from property_images
@@ -461,11 +462,11 @@ public class PropertyRepository {
 
     try (PreparedStatement insertStmt = connection.prepareStatement("""
       insert into property_images (
-        property_id, url, thumbnail_url, medium_url, large_url, placeholder_url,
+        property_id, public_id, url, thumbnail_url, medium_url, large_url, placeholder_url,
         width, height, thumbnail_width, medium_width, large_width,
         mime_type, original_name, display_order, is_primary
       )
-      values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       """)) {
       for (int i = 0; i < images.size(); i++) {
         PropertyImage image = images.get(i);
@@ -473,20 +474,21 @@ public class PropertyRepository {
           continue;
         }
         insertStmt.setLong(1, propertyId);
-        insertStmt.setString(2, image.url);
-        insertStmt.setString(3, image.thumbnailUrl);
-        insertStmt.setString(4, image.mediumUrl);
-        insertStmt.setString(5, image.largeUrl);
-        insertStmt.setString(6, image.placeholderUrl);
-        insertStmt.setObject(7, image.width);
-        insertStmt.setObject(8, image.height);
-        insertStmt.setObject(9, image.thumbnailWidth);
-        insertStmt.setObject(10, image.mediumWidth);
-        insertStmt.setObject(11, image.largeWidth);
-        insertStmt.setString(12, image.mimeType);
-        insertStmt.setString(13, image.originalName);
-        insertStmt.setInt(14, image.order != null ? image.order : i);
-        insertStmt.setBoolean(15, Boolean.TRUE.equals(image.isPrimary) || i == 0);
+        insertStmt.setString(2, image.publicId);
+        insertStmt.setString(3, image.url);
+        insertStmt.setString(4, image.thumbnailUrl);
+        insertStmt.setString(5, image.mediumUrl);
+        insertStmt.setString(6, image.largeUrl);
+        insertStmt.setString(7, image.placeholderUrl);
+        insertStmt.setObject(8, image.width);
+        insertStmt.setObject(9, image.height);
+        insertStmt.setObject(10, image.thumbnailWidth);
+        insertStmt.setObject(11, image.mediumWidth);
+        insertStmt.setObject(12, image.largeWidth);
+        insertStmt.setString(13, image.mimeType);
+        insertStmt.setString(14, image.originalName);
+        insertStmt.setInt(15, image.order != null ? image.order : i);
+        insertStmt.setBoolean(16, Boolean.TRUE.equals(image.isPrimary) || i == 0);
         insertStmt.addBatch();
       }
       insertStmt.executeBatch();
@@ -496,6 +498,7 @@ public class PropertyRepository {
   private PropertyImage mapImage(ResultSet rs, boolean includeLargeVariant, boolean publicAssetUrls) throws SQLException {
     PropertyImage image = new PropertyImage();
     image.id = String.valueOf(rs.getLong("id"));
+    image.publicId = rs.getString("public_id");
     String baseUrl = rs.getString("url");
     String thumbnailUrl = rs.getString("thumbnail_url");
     String largeUrl = rs.getString("large_url");
@@ -537,6 +540,7 @@ public class PropertyRepository {
 
     PropertyImage publicImage = new PropertyImage();
     publicImage.id = image.id;
+    publicImage.publicId = image.publicId;
     publicImage.url = includeLargeVariant
       ? resolvePublicImageReference(image.id, "large", image.url, true)
       : resolvePublicImageReference(image.id, "thumbnail", image.url, true);

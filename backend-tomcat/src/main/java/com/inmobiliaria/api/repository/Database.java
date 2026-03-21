@@ -139,6 +139,7 @@ public final class Database {
       create table if not exists property_images (
         id bigint auto_increment primary key,
         property_id bigint not null,
+        public_id varchar(255),
         url mediumtext not null,
         thumbnail_url mediumtext,
         medium_url mediumtext,
@@ -263,6 +264,12 @@ public final class Database {
     // Asegura compatibilidad con instalaciones previas donde url podía haber quedado en VARCHAR/TEXT.
     // El admin actual guarda imágenes como data URLs, que superan fácilmente 255 caracteres.
     statement.execute("alter table property_images modify column url mediumtext not null");
+    ensureColumnExists(
+      connection,
+      "property_images",
+      "public_id",
+      "alter table property_images add column public_id varchar(255)"
+    );
     ensureColumnExists(
       connection,
       "property_images",

@@ -78,6 +78,7 @@ function sanitizePayload(value = {}) {
 function normalizeImageForComparison(image = {}, index = 0) {
   return {
     id: image.id ?? null,
+    publicId: image.publicId ?? null,
     uploadToken: image.uploadToken ?? null,
     hasLocalFile: image.file instanceof File,
     url: image.file instanceof File ? '' : image.url || image.largeUrl || image.mediumUrl || image.thumbnailUrl || '',
@@ -105,7 +106,9 @@ function buildImagePayloadItem(image = {}, index = 0) {
   const hasLocalFile = image.file instanceof File
   return {
     id: image.id ?? null,
+    publicId: image.publicId ?? null,
     uploadToken: hasLocalFile ? image.uploadToken || `image_${index}` : null,
+    file: hasLocalFile ? image.file : null,
     url: hasLocalFile ? null : image.largeUrl || image.url || image.mediumUrl || image.thumbnailUrl || '',
     thumbnailUrl: hasLocalFile ? null : image.thumbnailUrl || image.mediumUrl || image.url || '',
     mediumUrl: hasLocalFile ? null : image.mediumUrl || null,
@@ -121,23 +124,6 @@ function buildImagePayloadItem(image = {}, index = 0) {
     order: index,
     isPrimary: index === 0 || image.isPrimary === true,
   }
-}
-
-function buildMultipartPayload(propertyPayload, imagePayload, sourceImages) {
-  const formDataPayload = new FormData()
-  formDataPayload.append('property', JSON.stringify({
-    ...propertyPayload,
-    images: imagePayload,
-  }))
-
-  sourceImages.forEach((image, index) => {
-    if (!(image.file instanceof File)) return
-    const uploadToken = imagePayload[index]?.uploadToken
-    if (!uploadToken) return
-    formDataPayload.append(`imageFile_${uploadToken}`, image.file, image.file.name)
-  })
-
-  return formDataPayload
 }
 
 onMounted(async () => {
@@ -188,27 +174,24 @@ async function save() {
   try {
     const normalizedImages = images.value.map((img, i) => buildImagePayloadItem(img, i))
     const imagesChanged = !isEdit.value || createImagesSnapshot(images.value) !== originalImagesSnapshot.value
-    const hasNewFiles = images.value.some(img => img.file instanceof File)
 
     const payload = {
       ...sanitizePayload(formData.value),
       slug: formData.value.slug || slugify(formData.value.title),
     }
 
-    let requestBody = payload
     if (imagesChanged) {
       payload.images = normalizedImages
-      requestBody = hasNewFiles ? buildMultipartPayload(payload, normalizedImages, images.value) : payload
     }
 
     if (isEdit.value) {
-      await updateProperty(route.params.id, requestBody)
+      await updateProperty(route.params.id, payload)
       router.push({
         name: 'AdminDashboard',
         query: { saved: payload.isPublished ? 'published' : 'updated' },
       })
     } else {
-      await createProperty(requestBody)
+      await createProperty(payload)
       router.push({
         name: 'AdminDashboard',
         query: { saved: payload.isPublished ? 'published' : 'created' },
