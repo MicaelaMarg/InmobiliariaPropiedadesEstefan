@@ -104,9 +104,12 @@ public final class Database {
         show_price boolean not null default true,
         location varchar(255),
         address varchar(255),
+        street_number varchar(40),
         city varchar(120),
+        country varchar(120),
         map_latitude double,
         map_longitude double,
+        map_source varchar(40),
         area varchar(120),
         total_area double,
         covered_area double,
@@ -357,6 +360,18 @@ public final class Database {
     ensureColumnExists(
       connection,
       "properties",
+      "street_number",
+      "alter table properties add column street_number varchar(40)"
+    );
+    ensureColumnExists(
+      connection,
+      "properties",
+      "country",
+      "alter table properties add column country varchar(120)"
+    );
+    ensureColumnExists(
+      connection,
+      "properties",
       "map_latitude",
       "alter table properties add column map_latitude double"
     );
@@ -365,6 +380,12 @@ public final class Database {
       "properties",
       "map_longitude",
       "alter table properties add column map_longitude double"
+    );
+    ensureColumnExists(
+      connection,
+      "properties",
+      "map_source",
+      "alter table properties add column map_source varchar(40)"
     );
     ensureColumnExists(
       connection,

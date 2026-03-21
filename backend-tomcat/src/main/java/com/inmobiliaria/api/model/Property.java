@@ -15,9 +15,12 @@ public class Property {
   public Boolean showPrice;
   public String location;
   public String address;
+  public String streetNumber;
   public String city;
+  public String country;
   public Double mapLatitude;
   public Double mapLongitude;
+  public String mapSource;
   public String area;
   public Double totalArea;
   public Double coveredArea;

@@ -28,9 +28,12 @@ function createDefaultForm() {
   showPrice: true,
   location: '',
   address: '',
+  streetNumber: '',
   city: '',
+  country: 'Argentina',
   mapLatitude: '',
   mapLongitude: '',
+  mapSource: 'approximate',
   area: '',
   totalArea: '',
   coveredArea: '',
@@ -111,12 +114,7 @@ function syncFromModelValue(value = {}) {
   isSyncingMapsInput.value = false
   mapInputError.value = ''
   mapInputSuccess.value = ''
-  mapSelectionMode.value = isValidCoordinatePair(
-    normalizeCoordinate(normalized.mapLatitude),
-    normalizeCoordinate(normalized.mapLongitude)
-  )
-    ? 'manual'
-    : 'auto'
+  mapSelectionMode.value = normalized.mapSource === 'exact' ? 'exact' : 'auto'
 }
 
 watch(
@@ -159,9 +157,10 @@ const normalizedMapArea = computed(() => {
 const mapSearchQuery = computed(() => {
   const parts = [
     form.value.address,
+    form.value.streetNumber,
     form.value.city,
     normalizedMapArea.value,
-    'Argentina',
+    form.value.country || 'Argentina',
   ]
 
   return parts
@@ -260,6 +259,7 @@ function applyMapsInput(options = {}) {
       ...form.value,
       mapLatitude: '',
       mapLongitude: '',
+      mapSource: 'approximate',
     }
     mapSelectionMode.value = 'auto'
     return
@@ -287,6 +287,7 @@ function applyMapsInput(options = {}) {
     ...form.value,
     mapLatitude: coordinates.lat,
     mapLongitude: coordinates.lng,
+    mapSource: 'exact',
   }
   mapSelectionMode.value = 'exact'
   if (normalizeInput) {
@@ -305,6 +306,7 @@ function clearExactMapLocation() {
     ...form.value,
     mapLatitude: '',
     mapLongitude: '',
+    mapSource: 'approximate',
   }
 }
 
@@ -316,6 +318,7 @@ function handleMapPickerUpdate({ lat, lng }) {
     ...form.value,
     mapLatitude: lat,
     mapLongitude: lng,
+    mapSource: 'exact',
   }
   isSyncingMapsInput.value = true
   mapsInput.value = formatMapPin(lat, lng)
@@ -334,6 +337,18 @@ function handleMapSuggestedCoordinates({ lat, lng }) {
     ...form.value,
     mapLatitude: lat,
     mapLongitude: lng,
+    mapSource: 'approximate',
+  }
+}
+
+function handleReverseGeocodedAddress({ road, houseNumber, city, area, country }) {
+  form.value = {
+    ...form.value,
+    address: road || form.value.address,
+    streetNumber: houseNumber || form.value.streetNumber,
+    city: city || form.value.city,
+    location: area || form.value.location,
+    country: country || form.value.country || 'Argentina',
   }
 }
 
@@ -370,6 +385,7 @@ watch(mapsInput, (value) => {
     ...form.value,
     mapLatitude: coordinates.lat,
     mapLongitude: coordinates.lng,
+    mapSource: 'exact',
   }
 }, { flush: 'post' })
 
@@ -386,6 +402,12 @@ function handleManualCoordinateInput() {
   isSyncingMapsInput.value = true
   mapsInput.value = formatMapPin(lat, lng)
   isSyncingMapsInput.value = false
+  form.value = {
+    ...form.value,
+    mapLatitude: lat,
+    mapLongitude: lng,
+    mapSource: 'exact',
+  }
 }
 </script>
 
@@ -511,6 +533,10 @@ function handleManualCoordinateInput() {
           <label class="block text-sm font-medium text-gray-700 mb-1">Ubicación / Zona</label>
           <input v-model="form.location" type="text" class="w-full rounded-xl border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-primary-500" placeholder="Barrio, ciudad, zona" />
         </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">País</label>
+          <input v-model="form.country" type="text" class="w-full rounded-xl border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-primary-500" placeholder="Argentina" />
+        </div>
         <div class="md:col-span-2">
           <label class="block text-sm font-medium text-gray-700 mb-1">¿Cuenta con expensas?</label>
           <select v-model="form.hasExpenses" class="w-full rounded-xl border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-primary-500">
@@ -519,8 +545,12 @@ function handleManualCoordinateInput() {
           </select>
         </div>
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Dirección</label>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Calle</label>
           <input v-model="form.address" type="text" class="w-full rounded-xl border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-primary-500" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Altura</label>
+          <input v-model="form.streetNumber" type="text" class="w-full rounded-xl border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-primary-500" />
         </div>
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">Ciudad</label>
@@ -565,11 +595,15 @@ function handleManualCoordinateInput() {
               :longitude="form.mapLongitude"
               :search-query="mapSearchQuery"
               :address="form.address"
+              :street-number="form.streetNumber"
               :city="form.city"
               :area="normalizedMapArea"
+              :country="form.country"
+              :map-source="form.mapSource"
               :lock-suggested-search="isMapSearchLocked"
               @update:coordinates="handleMapPickerUpdate"
               @suggested-coordinates="handleMapSuggestedCoordinates"
+              @reverse-geocoded="handleReverseGeocodedAddress"
             />
           </div>
 

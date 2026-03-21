@@ -61,6 +61,12 @@ function toNullableNumber(value) {
 function sanitizePayload(value = {}) {
   return {
     ...value,
+    address: value.address?.trim() || null,
+    streetNumber: value.streetNumber?.trim() || null,
+    city: value.city?.trim() || null,
+    country: value.country?.trim() || 'Argentina',
+    location: value.location?.trim() || null,
+    mapSource: value.mapSource || 'approximate',
     price: toNullableNumber(value.price),
     mapLatitude: toNullableNumber(value.mapLatitude),
     mapLongitude: toNullableNumber(value.mapLongitude),

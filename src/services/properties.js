@@ -17,6 +17,9 @@ const CLOUDINARY_WIDTHS = {
 function normalizeProperty(item = {}) {
   return {
     ...item,
+    country: item.country || 'Argentina',
+    streetNumber: item.streetNumber ?? '',
+    mapSource: item.mapSource || 'approximate',
     showPrice: item.showPrice ?? true,
     hasExpenses: item.hasExpenses ?? false,
     highlightedMessages: Array.isArray(item.highlightedMessages) ? item.highlightedMessages : [],

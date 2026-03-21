@@ -26,7 +26,7 @@ public class PropertyRepository {
   private static final int DEFAULT_PUBLIC_PAGE_SIZE = 12;
   private static final int MAX_PUBLIC_PAGE_SIZE = 48;
   private static final String BASE_SELECT = """
-    select id, slug, title, type, category, operation, price, currency, show_price, location, address, city, map_latitude, map_longitude, area,
+    select id, slug, title, type, category, operation, price, currency, show_price, location, address, street_number, city, country, map_latitude, map_longitude, map_source, area,
            total_area, covered_area, front_length, depth_length, bedrooms, bathrooms, rooms, state, description, features,
            reference_code, status, is_published, is_featured, highlighted_messages, payment_options,
            services, has_expenses,
@@ -185,13 +185,13 @@ public class PropertyRepository {
     try (Connection connection = Database.getConnection();
          PreparedStatement statement = connection.prepareStatement("""
            insert into properties (
-             slug, title, type, category, operation, price, currency, show_price, location, address, city, map_latitude, map_longitude, area,
+             slug, title, type, category, operation, price, currency, show_price, location, address, street_number, city, country, map_latitude, map_longitude, map_source, area,
              total_area, covered_area, front_length, depth_length, bedrooms, bathrooms, rooms, state, description, features,
              reference_code, status, is_published, is_featured, highlighted_messages, payment_options,
              services, has_expenses,
              contact_phone, contact_email,
              observations, youtube_url, created_at, updated_at
-           ) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+           ) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
            """, Statement.RETURN_GENERATED_KEYS)) {
       bindProperty(statement, property);
       statement.executeUpdate();
@@ -222,7 +222,7 @@ public class PropertyRepository {
          PreparedStatement statement = connection.prepareStatement("""
            update properties
               set slug = ?, title = ?, type = ?, category = ?, operation = ?, price = ?, currency = ?, show_price = ?,
-                  location = ?, address = ?, city = ?, map_latitude = ?, map_longitude = ?, area = ?, total_area = ?, covered_area = ?,
+                  location = ?, address = ?, street_number = ?, city = ?, country = ?, map_latitude = ?, map_longitude = ?, map_source = ?, area = ?, total_area = ?, covered_area = ?,
               front_length = ?, depth_length = ?, bedrooms = ?, bathrooms = ?, rooms = ?, state = ?, description = ?, features = ?,
               reference_code = ?, status = ?, is_published = ?, is_featured = ?, highlighted_messages = ?,
               payment_options = ?, services = ?, has_expenses = ?, contact_phone = ?, contact_email = ?, observations = ?, youtube_url = ?,
@@ -230,7 +230,7 @@ public class PropertyRepository {
             where id = ?
            """)) {
       bindProperty(statement, merged);
-      statement.setLong(39, id);
+      statement.setLong(42, id);
       statement.executeUpdate();
 
       if (changes.images != null) {
@@ -343,9 +343,12 @@ public class PropertyRepository {
     property.showPrice = rs.getBoolean("show_price");
     property.location = rs.getString("location");
     property.address = rs.getString("address");
+    property.streetNumber = rs.getString("street_number");
     property.city = rs.getString("city");
+    property.country = rs.getString("country");
     property.mapLatitude = getNullableDouble(rs, "map_latitude");
     property.mapLongitude = getNullableDouble(rs, "map_longitude");
+    property.mapSource = rs.getString("map_source");
     property.area = rs.getString("area");
     property.totalArea = getNullableDouble(rs, "total_area");
     property.coveredArea = getNullableDouble(rs, "covered_area");
@@ -614,34 +617,37 @@ public class PropertyRepository {
     statement.setBoolean(8, Boolean.TRUE.equals(property.showPrice));
     statement.setString(9, property.location);
     statement.setString(10, property.address);
-    statement.setString(11, property.city);
-    statement.setObject(12, property.mapLatitude);
-    statement.setObject(13, property.mapLongitude);
-    statement.setString(14, property.area);
-    statement.setObject(15, property.totalArea);
-    statement.setObject(16, property.coveredArea);
-    statement.setObject(17, property.frontLength);
-    statement.setObject(18, property.depthLength);
-    statement.setObject(19, property.bedrooms);
-    statement.setObject(20, property.bathrooms);
-    statement.setObject(21, property.rooms);
-    statement.setString(22, property.state);
-    statement.setString(23, property.description);
-    statement.setString(24, JsonUtil.gson().toJson(property.features));
-    statement.setString(25, property.referenceCode);
-    statement.setString(26, property.status);
-    statement.setBoolean(27, Boolean.TRUE.equals(property.isPublished));
-    statement.setBoolean(28, Boolean.TRUE.equals(property.isFeatured));
-    statement.setString(29, JsonUtil.gson().toJson(property.highlightedMessages));
-    statement.setString(30, JsonUtil.gson().toJson(property.paymentOptions));
-    statement.setString(31, JsonUtil.gson().toJson(property.services));
-    statement.setBoolean(32, Boolean.TRUE.equals(property.hasExpenses));
-    statement.setString(33, property.contactPhone);
-    statement.setString(34, property.contactEmail);
-    statement.setString(35, property.observations);
-    statement.setString(36, property.youtubeUrl);
-    statement.setString(37, property.createdAt);
-    statement.setString(38, property.updatedAt);
+    statement.setString(11, property.streetNumber);
+    statement.setString(12, property.city);
+    statement.setString(13, property.country);
+    statement.setObject(14, property.mapLatitude);
+    statement.setObject(15, property.mapLongitude);
+    statement.setString(16, property.mapSource);
+    statement.setString(17, property.area);
+    statement.setObject(18, property.totalArea);
+    statement.setObject(19, property.coveredArea);
+    statement.setObject(20, property.frontLength);
+    statement.setObject(21, property.depthLength);
+    statement.setObject(22, property.bedrooms);
+    statement.setObject(23, property.bathrooms);
+    statement.setObject(24, property.rooms);
+    statement.setString(25, property.state);
+    statement.setString(26, property.description);
+    statement.setString(27, JsonUtil.gson().toJson(property.features));
+    statement.setString(28, property.referenceCode);
+    statement.setString(29, property.status);
+    statement.setBoolean(30, Boolean.TRUE.equals(property.isPublished));
+    statement.setBoolean(31, Boolean.TRUE.equals(property.isFeatured));
+    statement.setString(32, JsonUtil.gson().toJson(property.highlightedMessages));
+    statement.setString(33, JsonUtil.gson().toJson(property.paymentOptions));
+    statement.setString(34, JsonUtil.gson().toJson(property.services));
+    statement.setBoolean(35, Boolean.TRUE.equals(property.hasExpenses));
+    statement.setString(36, property.contactPhone);
+    statement.setString(37, property.contactEmail);
+    statement.setString(38, property.observations);
+    statement.setString(39, property.youtubeUrl);
+    statement.setString(40, property.createdAt);
+    statement.setString(41, property.updatedAt);
   }
 
   private void bindParams(PreparedStatement statement, List<Object> params) throws SQLException {
@@ -669,6 +675,8 @@ public class PropertyRepository {
     property.operation = defaultIfBlank(property.operation, "venta");
     property.currency = defaultIfBlank(property.currency, "USD");
     property.showPrice = property.showPrice != null ? property.showPrice : Boolean.TRUE;
+    property.country = defaultIfBlank(property.country, "Argentina");
+    property.mapSource = defaultIfBlank(property.mapSource, "approximate");
     property.status = defaultIfBlank(property.status, "available");
     property.isPublished = property.isPublished != null ? property.isPublished : Boolean.TRUE;
     property.isFeatured = property.isFeatured != null ? property.isFeatured : Boolean.FALSE;
@@ -703,9 +711,12 @@ public class PropertyRepository {
     merged.showPrice = changes.showPrice != null ? changes.showPrice : existing.showPrice;
     merged.location = pick(changes.location, existing.location);
     merged.address = pick(changes.address, existing.address);
+    merged.streetNumber = pick(changes.streetNumber, existing.streetNumber);
     merged.city = pick(changes.city, existing.city);
+    merged.country = pick(changes.country, existing.country, "Argentina");
     merged.mapLatitude = changes.mapLatitude;
     merged.mapLongitude = changes.mapLongitude;
+    merged.mapSource = pick(changes.mapSource, existing.mapSource, "approximate");
     merged.area = pick(changes.area, existing.area);
     merged.totalArea = changes.totalArea;
     merged.coveredArea = changes.coveredArea;

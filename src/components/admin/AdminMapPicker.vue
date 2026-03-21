@@ -7,12 +7,15 @@ const props = defineProps({
   heightClass: { type: String, default: 'h-[320px]' },
   searchQuery: { type: String, default: '' },
   address: { type: String, default: '' },
+  streetNumber: { type: String, default: '' },
   city: { type: String, default: '' },
   area: { type: String, default: '' },
+  country: { type: String, default: 'Argentina' },
+  mapSource: { type: String, default: 'approximate' },
   lockSuggestedSearch: { type: Boolean, default: false },
 })
 
-const emit = defineEmits(['update:coordinates', 'suggested-coordinates'])
+const emit = defineEmits(['update:coordinates', 'suggested-coordinates', 'reverse-geocoded'])
 
 const mapRoot = ref(null)
 const searchStatus = ref('')
@@ -22,12 +25,14 @@ let marker = null
 let tileLayer = null
 let searchTimer = null
 let activeSearchId = 0
+let activeReverseSearchId = 0
 
 const hasCoordinates = computed(() => {
   const lat = Number(props.latitude)
   const lng = Number(props.longitude)
   return Number.isFinite(lat) && Number.isFinite(lng)
 })
+const hasExactSource = computed(() => props.mapSource === 'exact')
 
 function toCoordinates() {
   if (!hasCoordinates.value) return null
@@ -70,6 +75,7 @@ function ensureMarker() {
     marker.on('dragend', () => {
       const next = marker.getLatLng()
       emitCoordinates(next.lat, next.lng)
+      reverseGeocode(next.lat, next.lng)
     })
     marker.addTo(map)
   }
@@ -98,7 +104,7 @@ function updateMarkerAndView(shouldPan = false) {
 
 async function searchLocation(query) {
   const normalizedQuery = String(query || '').trim()
-  if (!normalizedQuery || (hasCoordinates.value && props.lockSuggestedSearch)) {
+  if (!normalizedQuery || (hasCoordinates.value && (props.lockSuggestedSearch || hasExactSource.value))) {
     searchStatus.value = ''
     return
   }
@@ -112,7 +118,7 @@ async function searchLocation(query) {
       ? structuredResults
       : await fetchSearchResults(buildQueryUrl(normalizedQuery))
 
-    if (searchId !== activeSearchId || (hasCoordinates.value && props.lockSuggestedSearch)) {
+    if (searchId !== activeSearchId || (hasCoordinates.value && (props.lockSuggestedSearch || hasExactSource.value))) {
       return
     }
 
@@ -149,10 +155,12 @@ function buildQueryUrl(query) {
 
 async function fetchStructuredResults() {
   const address = String(props.address || '').trim()
+  const streetNumber = String(props.streetNumber || '').trim()
   const city = String(props.city || '').trim()
   const area = String(props.area || '').trim()
+  const country = String(props.country || 'Argentina').trim()
 
-  if (!address && !city && !area) {
+  if (!address && !streetNumber && !city && !area) {
     return []
   }
 
@@ -161,8 +169,8 @@ async function fetchStructuredResults() {
   url.searchParams.set('limit', '1')
   url.searchParams.set('countrycodes', 'ar')
   url.searchParams.set('accept-language', 'es')
-  url.searchParams.set('country', 'Argentina')
-  if (address) url.searchParams.set('street', address)
+  url.searchParams.set('country', country || 'Argentina')
+  if (address || streetNumber) url.searchParams.set('street', [address, streetNumber].filter(Boolean).join(' '))
   if (city) url.searchParams.set('city', city)
   if (area) url.searchParams.set('county', area)
 
@@ -181,6 +189,45 @@ async function fetchSearchResults(url) {
   }
 
   return response.json()
+}
+
+async function reverseGeocode(lat, lng) {
+  const searchId = ++activeReverseSearchId
+
+  try {
+    const url = new URL('https://nominatim.openstreetmap.org/reverse')
+    url.searchParams.set('format', 'jsonv2')
+    url.searchParams.set('lat', String(lat))
+    url.searchParams.set('lon', String(lng))
+    url.searchParams.set('accept-language', 'es')
+
+    const response = await fetch(url.toString(), {
+      headers: {
+        Accept: 'application/json',
+      },
+    })
+
+    if (!response.ok) {
+      throw new Error('No se pudo obtener la dirección')
+    }
+
+    const result = await response.json()
+    if (searchId !== activeReverseSearchId) {
+      return
+    }
+
+    const address = result?.address || {}
+    emit('reverse-geocoded', {
+      road: address.road || '',
+      houseNumber: address.house_number || '',
+      city: address.city || address.town || address.village || '',
+      area: address.suburb || address.neighbourhood || address.county || '',
+      country: address.country || '',
+      label: result?.display_name || '',
+    })
+  } catch {
+    // Si falla el reverse geocoding, mantenemos las coordenadas exactas sin bloquear el flujo.
+  }
 }
 
 async function initMap() {
@@ -206,6 +253,7 @@ async function initMap() {
 
   map.on('click', (event) => {
     emitCoordinates(event.latlng.lat, event.latlng.lng)
+    reverseGeocode(event.latlng.lat, event.latlng.lng)
   })
 
   updateMarkerAndView(false)
@@ -233,7 +281,7 @@ watch(
     }
 
     const normalizedQuery = String(nextQuery || '').trim()
-    if (!normalizedQuery || (hasCoordinates.value && props.lockSuggestedSearch)) {
+    if (!normalizedQuery || (hasCoordinates.value && (props.lockSuggestedSearch || hasExactSource.value))) {
       if (!normalizedQuery) {
         searchStatus.value = ''
       }
