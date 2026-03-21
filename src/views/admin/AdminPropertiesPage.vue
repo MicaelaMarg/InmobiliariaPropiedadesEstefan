@@ -109,6 +109,7 @@ const typeLabel = (type) => {
     kiosco: 'Kiosko',
     kiosko: 'Kiosko',
     galpon: 'Galpón',
+    hotel_complejo: 'Hotel/Complejo',
     terreno: 'Terreno',
     oficina: 'Oficina',
     otro: 'Otro',

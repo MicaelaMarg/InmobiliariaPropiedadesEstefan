@@ -143,6 +143,21 @@ const mapsPreviewUrl = computed(() => {
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${lat},${lng}`)}`
 })
 
+const mapSearchQuery = computed(() => {
+  const parts = [
+    form.value.address,
+    form.value.location,
+    form.value.city,
+    'Argentina',
+  ]
+
+  return parts
+    .filter(Boolean)
+    .map(value => String(value).trim())
+    .filter(Boolean)
+    .join(', ')
+})
+
 function toCoordinateNumber(value) {
   if (value === '' || value === null || value === undefined) return null
   const numeric = Number(value)
@@ -273,6 +288,27 @@ function clearExactMapLocation() {
 function handleMapPickerUpdate({ lat, lng }) {
   mapInputError.value = ''
   mapInputSuccess.value = 'Punto exacto seleccionado en el mapa.'
+  form.value = {
+    ...form.value,
+    mapLatitude: lat,
+    mapLongitude: lng,
+  }
+  isSyncingMapsInput.value = true
+  mapsInput.value = formatMapPin(lat, lng)
+  isSyncingMapsInput.value = false
+}
+
+function handleMapSuggestedCoordinates({ lat, lng }) {
+  const hasExistingCoordinates = isValidCoordinatePair(
+    normalizeCoordinate(form.value.mapLatitude),
+    normalizeCoordinate(form.value.mapLongitude)
+  )
+  if (hasExistingCoordinates) {
+    return
+  }
+
+  mapInputError.value = ''
+  mapInputSuccess.value = 'Ubicación aproximada detectada. Si hace falta, ajustala haciendo click en el mapa.'
   form.value = {
     ...form.value,
     mapLatitude: lat,
@@ -493,7 +529,9 @@ watch(mapsInput, (value) => {
             <AdminMapPicker
               :latitude="form.mapLatitude"
               :longitude="form.mapLongitude"
+              :search-query="mapSearchQuery"
               @update:coordinates="handleMapPickerUpdate"
+              @suggested-coordinates="handleMapSuggestedCoordinates"
             />
           </div>
 

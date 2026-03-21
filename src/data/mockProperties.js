@@ -11,6 +11,7 @@ export const PROPERTY_TYPES = [
   { value: 'fondo_comercio', label: 'Fondo de comercio' },
   { value: 'kiosco', label: 'Kiosko' },
   { value: 'galpon', label: 'Galpón' },
+  { value: 'hotel_complejo', label: 'Hotel/Complejo' },
   { value: 'terreno', label: 'Terreno' },
   { value: 'oficina', label: 'Oficina' },
   { value: 'otro', label: 'Otro' },

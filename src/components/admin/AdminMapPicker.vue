@@ -5,15 +5,19 @@ const props = defineProps({
   latitude: { type: [Number, String, null], default: null },
   longitude: { type: [Number, String, null], default: null },
   heightClass: { type: String, default: 'h-[320px]' },
+  searchQuery: { type: String, default: '' },
 })
 
-const emit = defineEmits(['update:coordinates'])
+const emit = defineEmits(['update:coordinates', 'suggested-coordinates'])
 
 const mapRoot = ref(null)
+const searchStatus = ref('')
 let leaflet = null
 let map = null
 let marker = null
 let tileLayer = null
+let searchTimer = null
+let activeSearchId = 0
 
 const hasCoordinates = computed(() => {
   const lat = Number(props.latitude)
@@ -41,6 +45,14 @@ function emitCoordinates(lat, lng) {
   emit('update:coordinates', {
     lat: Number(lat.toFixed(6)),
     lng: Number(lng.toFixed(6)),
+  })
+}
+
+function emitSuggestedCoordinates(lat, lng, label = '') {
+  emit('suggested-coordinates', {
+    lat: Number(lat.toFixed(6)),
+    lng: Number(lng.toFixed(6)),
+    label,
   })
 }
 
@@ -77,6 +89,60 @@ function updateMarkerAndView(shouldPan = false) {
 
   if (shouldPan) {
     map.setView(coordinates, Math.max(map.getZoom(), 17), { animate: false })
+  }
+}
+
+async function searchLocation(query) {
+  const normalizedQuery = String(query || '').trim()
+  if (!normalizedQuery || hasCoordinates.value) {
+    searchStatus.value = ''
+    return
+  }
+
+  const searchId = ++activeSearchId
+  searchStatus.value = 'Buscando ubicación aproximada...'
+
+  try {
+    const url = new URL('https://nominatim.openstreetmap.org/search')
+    url.searchParams.set('format', 'jsonv2')
+    url.searchParams.set('limit', '1')
+    url.searchParams.set('countrycodes', 'ar')
+    url.searchParams.set('accept-language', 'es')
+    url.searchParams.set('q', normalizedQuery)
+
+    const response = await fetch(url.toString(), {
+      headers: {
+        Accept: 'application/json',
+      },
+    })
+
+    if (!response.ok) {
+      throw new Error('No se pudo buscar la ubicación')
+    }
+
+    const results = await response.json()
+    if (searchId !== activeSearchId || hasCoordinates.value) {
+      return
+    }
+
+    const firstResult = Array.isArray(results) ? results[0] : null
+    if (!firstResult?.lat || !firstResult?.lon) {
+      searchStatus.value = 'No encontré esa dirección todavía. Podés marcarla manualmente en el mapa.'
+      return
+    }
+
+    const lat = Number(firstResult.lat)
+    const lng = Number(firstResult.lon)
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+      searchStatus.value = 'No encontré esa dirección todavía. Podés marcarla manualmente en el mapa.'
+      return
+    }
+
+    emitSuggestedCoordinates(lat, lng, firstResult.display_name || normalizedQuery)
+    searchStatus.value = 'Ubicación aproximada encontrada. Si hace falta, ajustala haciendo click en el mapa.'
+  } catch {
+    if (searchId !== activeSearchId) return
+    searchStatus.value = 'No pude buscar la dirección ahora. Podés marcar el punto manualmente en el mapa.'
   }
 }
 
@@ -121,11 +187,38 @@ watch(
   }
 )
 
+watch(
+  () => props.searchQuery,
+  (nextQuery) => {
+    if (searchTimer) {
+      window.clearTimeout(searchTimer)
+      searchTimer = null
+    }
+
+    const normalizedQuery = String(nextQuery || '').trim()
+    if (!normalizedQuery || hasCoordinates.value) {
+      if (!normalizedQuery) {
+        searchStatus.value = ''
+      }
+      return
+    }
+
+    searchTimer = window.setTimeout(() => {
+      searchLocation(normalizedQuery)
+    }, 600)
+  },
+  { immediate: true }
+)
+
 onMounted(() => {
   initMap()
 })
 
 onBeforeUnmount(() => {
+  if (searchTimer) {
+    window.clearTimeout(searchTimer)
+    searchTimer = null
+  }
   if (map) {
     map.remove()
     map = null
@@ -146,6 +239,9 @@ onBeforeUnmount(() => {
       <span v-if="hasCoordinates">
         {{ Number(latitude).toFixed(6) }}, {{ Number(longitude).toFixed(6) }}
       </span>
+    </div>
+    <div v-if="searchStatus" class="border-t border-emerald-100 bg-white px-4 py-3 text-xs text-gray-600">
+      {{ searchStatus }}
     </div>
   </div>
 </template>
