@@ -151,12 +151,20 @@ const mapsPreviewUrl = computed(() => {
 })
 
 const isMapSearchLocked = computed(() => mapSelectionMode.value === 'manual' || mapSelectionMode.value === 'exact')
+const normalizedMapArea = computed(() => {
+  const value = String(form.value.location || '').trim()
+  return value && value.toLowerCase() !== 'argentina' ? value : ''
+})
 
 const mapSearchQuery = computed(() => {
+  const normalizePart = (value) => String(value || '').trim()
+  const normalizedCity = normalizePart(form.value.city)
+  const normalizedAddress = normalizePart(form.value.address)
+
   const parts = [
-    form.value.address,
-    form.value.location,
-    form.value.city,
+    normalizedAddress,
+    normalizedCity,
+    normalizedMapArea.value,
     'Argentina',
   ]
 
@@ -263,8 +271,10 @@ function applyMapsInput(options = {}) {
 
   const coordinates = extractCoordinates(mapsInput.value)
   if (!coordinates) {
+    const raw = String(mapsInput.value || '').trim()
+    const looksLikeExactMapInput = raw.startsWith('http') || raw.includes('maps.app.goo.gl') || raw.includes('google.com/maps') || /-?\d+(?:\.\d+)?\s*,\s*-?\d+(?:\.\d+)?/.test(raw)
     mapInputSuccess.value = ''
-    mapInputError.value = showError
+    mapInputError.value = showError && looksLikeExactMapInput
       ? 'No pude leer ese enlace. Pegá un link completo de Google Maps o coordenadas tipo "-37.9901, -57.5467".'
       : ''
     return
@@ -556,6 +566,9 @@ function handleManualCoordinateInput() {
               :latitude="form.mapLatitude"
               :longitude="form.mapLongitude"
               :search-query="mapSearchQuery"
+              :address="form.address"
+              :city="form.city"
+              :area="normalizedMapArea"
               :lock-suggested-search="isMapSearchLocked"
               @update:coordinates="handleMapPickerUpdate"
               @suggested-coordinates="handleMapSuggestedCoordinates"
