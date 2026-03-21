@@ -203,7 +203,7 @@ public class PropertyRepository {
       }
 
       saveImages(connection, Long.parseLong(property.id), property.images);
-      return findById(Long.parseLong(property.id));
+      return property;
     }
   }
 
@@ -236,7 +236,7 @@ public class PropertyRepository {
       if (changes.images != null) {
         saveImages(connection, id, merged.images);
       }
-      return findById(id);
+      return merged;
     }
   }
 

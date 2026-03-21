@@ -165,6 +165,10 @@ onMounted(async () => {
 })
 
 async function save() {
+  if (saving.value) {
+    return
+  }
+
   if (!formData.value.title?.trim()) {
     error.value = 'El título es obligatorio.'
     return
@@ -249,7 +253,7 @@ function cancel() {
       </div>
 
       <div class="flex gap-3">
-        <button type="button" class="btn-primary" :disabled="saving" @click="save">
+        <button type="button" class="btn-primary disabled:cursor-not-allowed disabled:opacity-70" :disabled="saving" @click="save">
           {{ saving ? 'Guardando...' : 'Guardar' }}
         </button>
         <button type="button" class="btn-secondary" :disabled="saving" @click="cancel">Cancelar</button>
