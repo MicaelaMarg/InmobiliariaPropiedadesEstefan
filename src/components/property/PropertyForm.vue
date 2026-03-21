@@ -63,6 +63,7 @@ const mapsInput = ref('')
 const mapInputError = ref('')
 const mapInputSuccess = ref('')
 const isSyncingMapsInput = ref(false)
+const mapSelectionMode = ref('auto')
 
 function arraysEqual(a = [], b = []) {
   return JSON.stringify(a) === JSON.stringify(b)
@@ -110,6 +111,12 @@ function syncFromModelValue(value = {}) {
   isSyncingMapsInput.value = false
   mapInputError.value = ''
   mapInputSuccess.value = ''
+  mapSelectionMode.value = isValidCoordinatePair(
+    normalizeCoordinate(normalized.mapLatitude),
+    normalizeCoordinate(normalized.mapLongitude)
+  )
+    ? 'manual'
+    : 'auto'
 }
 
 watch(
@@ -142,6 +149,8 @@ const mapsPreviewUrl = computed(() => {
   if (!isValidCoordinatePair(lat, lng)) return ''
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${lat},${lng}`)}`
 })
+
+const isMapSearchLocked = computed(() => mapSelectionMode.value === 'manual' || mapSelectionMode.value === 'exact')
 
 const mapSearchQuery = computed(() => {
   const parts = [
@@ -248,6 +257,7 @@ function applyMapsInput(options = {}) {
       mapLatitude: '',
       mapLongitude: '',
     }
+    mapSelectionMode.value = 'auto'
     return
   }
 
@@ -267,6 +277,7 @@ function applyMapsInput(options = {}) {
     mapLatitude: coordinates.lat,
     mapLongitude: coordinates.lng,
   }
+  mapSelectionMode.value = 'exact'
   if (normalizeInput) {
     isSyncingMapsInput.value = true
     mapsInput.value = formatMapPin(coordinates.lat, coordinates.lng)
@@ -278,6 +289,7 @@ function clearExactMapLocation() {
   mapInputError.value = ''
   mapInputSuccess.value = ''
   mapsInput.value = ''
+  mapSelectionMode.value = 'auto'
   form.value = {
     ...form.value,
     mapLatitude: '',
@@ -288,6 +300,7 @@ function clearExactMapLocation() {
 function handleMapPickerUpdate({ lat, lng }) {
   mapInputError.value = ''
   mapInputSuccess.value = 'Punto exacto seleccionado en el mapa.'
+  mapSelectionMode.value = 'manual'
   form.value = {
     ...form.value,
     mapLatitude: lat,
@@ -299,16 +312,13 @@ function handleMapPickerUpdate({ lat, lng }) {
 }
 
 function handleMapSuggestedCoordinates({ lat, lng }) {
-  const hasExistingCoordinates = isValidCoordinatePair(
-    normalizeCoordinate(form.value.mapLatitude),
-    normalizeCoordinate(form.value.mapLongitude)
-  )
-  if (hasExistingCoordinates) {
+  if (isMapSearchLocked.value) {
     return
   }
 
   mapInputError.value = ''
-  mapInputSuccess.value = 'Ubicación aproximada detectada. Si hace falta, ajustala haciendo click en el mapa.'
+  mapInputSuccess.value = 'Mapa actualizado con la dirección cargada. Si hace falta, ajustalo haciendo click en el mapa.'
+  mapSelectionMode.value = 'auto'
   form.value = {
     ...form.value,
     mapLatitude: lat,
@@ -347,12 +357,28 @@ watch(mapsInput, (value) => {
 
   mapInputError.value = ''
   mapInputSuccess.value = 'Ubicación exacta detectada y cargada.'
+  mapSelectionMode.value = 'exact'
   form.value = {
     ...form.value,
     mapLatitude: coordinates.lat,
     mapLongitude: coordinates.lng,
   }
 }, { flush: 'post' })
+
+function handleManualCoordinateInput() {
+  const lat = normalizeCoordinate(form.value.mapLatitude)
+  const lng = normalizeCoordinate(form.value.mapLongitude)
+  if (!isValidCoordinatePair(lat, lng)) {
+    return
+  }
+
+  mapInputError.value = ''
+  mapInputSuccess.value = 'Punto exacto cargado manualmente.'
+  mapSelectionMode.value = 'manual'
+  isSyncingMapsInput.value = true
+  mapsInput.value = formatMapPin(lat, lng)
+  isSyncingMapsInput.value = false
+}
 </script>
 
 <template>
@@ -497,7 +523,7 @@ watch(mapsInput, (value) => {
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Ubicación exacta en Google Maps</label>
               <p class="text-xs text-gray-500">
-                Ideal para lotes o propiedades sin numeración. Pegá un link de Google Maps y el punto exacto se carga automáticamente.
+                Si completás dirección, altura y ciudad, el mapa intenta ubicarse solo. También podés pegar un link de Google Maps o marcar el punto exacto manualmente.
               </p>
             </div>
             <button
@@ -530,6 +556,7 @@ watch(mapsInput, (value) => {
               :latitude="form.mapLatitude"
               :longitude="form.mapLongitude"
               :search-query="mapSearchQuery"
+              :lock-suggested-search="isMapSearchLocked"
               @update:coordinates="handleMapPickerUpdate"
               @suggested-coordinates="handleMapSuggestedCoordinates"
             />
@@ -538,11 +565,11 @@ watch(mapsInput, (value) => {
           <div class="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
             <div>
               <label class="block text-xs font-medium text-gray-700 mb-1">Latitud</label>
-              <input v-model.number="form.mapLatitude" type="number" step="0.000001" class="w-full rounded-xl border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-primary-500" placeholder="-37.990100" />
+              <input v-model.number="form.mapLatitude" type="number" step="0.000001" class="w-full rounded-xl border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-primary-500" placeholder="-37.990100" @input="handleManualCoordinateInput" />
             </div>
             <div>
               <label class="block text-xs font-medium text-gray-700 mb-1">Longitud</label>
-              <input v-model.number="form.mapLongitude" type="number" step="0.000001" class="w-full rounded-xl border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-primary-500" placeholder="-57.546700" />
+              <input v-model.number="form.mapLongitude" type="number" step="0.000001" class="w-full rounded-xl border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-primary-500" placeholder="-57.546700" @input="handleManualCoordinateInput" />
             </div>
           </div>
 

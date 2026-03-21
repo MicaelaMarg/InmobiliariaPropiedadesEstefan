@@ -6,6 +6,7 @@ const props = defineProps({
   longitude: { type: [Number, String, null], default: null },
   heightClass: { type: String, default: 'h-[320px]' },
   searchQuery: { type: String, default: '' },
+  lockSuggestedSearch: { type: Boolean, default: false },
 })
 
 const emit = defineEmits(['update:coordinates', 'suggested-coordinates'])
@@ -94,7 +95,7 @@ function updateMarkerAndView(shouldPan = false) {
 
 async function searchLocation(query) {
   const normalizedQuery = String(query || '').trim()
-  if (!normalizedQuery || hasCoordinates.value) {
+  if (!normalizedQuery || (hasCoordinates.value && props.lockSuggestedSearch)) {
     searchStatus.value = ''
     return
   }
@@ -121,7 +122,7 @@ async function searchLocation(query) {
     }
 
     const results = await response.json()
-    if (searchId !== activeSearchId || hasCoordinates.value) {
+    if (searchId !== activeSearchId || (hasCoordinates.value && props.lockSuggestedSearch)) {
       return
     }
 
@@ -196,7 +197,7 @@ watch(
     }
 
     const normalizedQuery = String(nextQuery || '').trim()
-    if (!normalizedQuery || hasCoordinates.value) {
+    if (!normalizedQuery || (hasCoordinates.value && props.lockSuggestedSearch)) {
       if (!normalizedQuery) {
         searchStatus.value = ''
       }
