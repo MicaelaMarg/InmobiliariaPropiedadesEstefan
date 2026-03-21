@@ -208,13 +208,6 @@ function extractCoordinates(raw = '') {
 
   try {
     const url = new URL(value)
-    const pathnameMatch = url.pathname.match(/@(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/)
-    if (pathnameMatch) {
-      const lat = normalizeCoordinate(pathnameMatch[1])
-      const lng = normalizeCoordinate(pathnameMatch[2])
-      return isValidCoordinatePair(lat, lng) ? { lat, lng } : null
-    }
-
     const dataMatch = url.pathname.match(/!3d(-?\d+(?:\.\d+)?)!4d(-?\d+(?:\.\d+)?)/)
     if (dataMatch) {
       const lat = normalizeCoordinate(dataMatch[1])
@@ -232,6 +225,13 @@ function extractCoordinates(raw = '') {
       if (isValidCoordinatePair(lat, lng)) {
         return { lat, lng }
       }
+    }
+
+    const pathnameMatch = url.pathname.match(/@(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/)
+    if (pathnameMatch) {
+      const lat = normalizeCoordinate(pathnameMatch[1])
+      const lng = normalizeCoordinate(pathnameMatch[2])
+      return isValidCoordinatePair(lat, lng) ? { lat, lng } : null
     }
   } catch {
     return null
