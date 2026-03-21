@@ -6,6 +6,9 @@ const props = defineProps({
   longitude: { type: [Number, String, null], default: null },
   heightClass: { type: String, default: 'h-[320px]' },
   searchQuery: { type: String, default: '' },
+  address: { type: String, default: '' },
+  city: { type: String, default: '' },
+  area: { type: String, default: '' },
   lockSuggestedSearch: { type: Boolean, default: false },
 })
 
@@ -104,24 +107,11 @@ async function searchLocation(query) {
   searchStatus.value = 'Buscando ubicación aproximada...'
 
   try {
-    const url = new URL('https://nominatim.openstreetmap.org/search')
-    url.searchParams.set('format', 'jsonv2')
-    url.searchParams.set('limit', '1')
-    url.searchParams.set('countrycodes', 'ar')
-    url.searchParams.set('accept-language', 'es')
-    url.searchParams.set('q', normalizedQuery)
+    const structuredResults = await fetchStructuredResults()
+    const results = Array.isArray(structuredResults) && structuredResults.length
+      ? structuredResults
+      : await fetchSearchResults(buildQueryUrl(normalizedQuery))
 
-    const response = await fetch(url.toString(), {
-      headers: {
-        Accept: 'application/json',
-      },
-    })
-
-    if (!response.ok) {
-      throw new Error('No se pudo buscar la ubicación')
-    }
-
-    const results = await response.json()
     if (searchId !== activeSearchId || (hasCoordinates.value && props.lockSuggestedSearch)) {
       return
     }
@@ -145,6 +135,52 @@ async function searchLocation(query) {
     if (searchId !== activeSearchId) return
     searchStatus.value = 'No pude buscar la dirección ahora. Podés marcar el punto manualmente en el mapa.'
   }
+}
+
+function buildQueryUrl(query) {
+  const url = new URL('https://nominatim.openstreetmap.org/search')
+  url.searchParams.set('format', 'jsonv2')
+  url.searchParams.set('limit', '1')
+  url.searchParams.set('countrycodes', 'ar')
+  url.searchParams.set('accept-language', 'es')
+  url.searchParams.set('q', query)
+  return url
+}
+
+async function fetchStructuredResults() {
+  const address = String(props.address || '').trim()
+  const city = String(props.city || '').trim()
+  const area = String(props.area || '').trim()
+
+  if (!address && !city && !area) {
+    return []
+  }
+
+  const url = new URL('https://nominatim.openstreetmap.org/search')
+  url.searchParams.set('format', 'jsonv2')
+  url.searchParams.set('limit', '1')
+  url.searchParams.set('countrycodes', 'ar')
+  url.searchParams.set('accept-language', 'es')
+  url.searchParams.set('country', 'Argentina')
+  if (address) url.searchParams.set('street', address)
+  if (city) url.searchParams.set('city', city)
+  if (area) url.searchParams.set('county', area)
+
+  return fetchSearchResults(url)
+}
+
+async function fetchSearchResults(url) {
+  const response = await fetch(url.toString(), {
+    headers: {
+      Accept: 'application/json',
+    },
+  })
+
+  if (!response.ok) {
+    throw new Error('No se pudo buscar la ubicación')
+  }
+
+  return response.json()
 }
 
 async function initMap() {

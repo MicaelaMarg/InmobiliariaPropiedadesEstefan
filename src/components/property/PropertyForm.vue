@@ -151,12 +151,16 @@ const mapsPreviewUrl = computed(() => {
 })
 
 const isMapSearchLocked = computed(() => mapSelectionMode.value === 'manual' || mapSelectionMode.value === 'exact')
+const normalizedMapArea = computed(() => {
+  const value = String(form.value.location || '').trim()
+  return value && value.toLowerCase() !== 'argentina' ? value : ''
+})
 
 const mapSearchQuery = computed(() => {
   const parts = [
     form.value.address,
-    form.value.location,
     form.value.city,
+    normalizedMapArea.value,
     'Argentina',
   ]
 
@@ -263,8 +267,15 @@ function applyMapsInput(options = {}) {
 
   const coordinates = extractCoordinates(mapsInput.value)
   if (!coordinates) {
+    const raw = String(mapsInput.value || '').trim()
+    const looksLikeExactInput =
+      /^https?:\/\//i.test(raw) ||
+      raw.includes('maps.app.goo.gl') ||
+      raw.includes('google.com/maps') ||
+      /-?\d+(?:\.\d+)?\s*,\s*-?\d+(?:\.\d+)?/.test(raw)
+
     mapInputSuccess.value = ''
-    mapInputError.value = showError
+    mapInputError.value = showError && looksLikeExactInput
       ? 'No pude leer ese enlace. Pegá un link completo de Google Maps o coordenadas tipo "-37.9901, -57.5467".'
       : ''
     return
@@ -317,16 +328,13 @@ function handleMapSuggestedCoordinates({ lat, lng }) {
   }
 
   mapInputError.value = ''
-  mapInputSuccess.value = 'Mapa actualizado con la dirección cargada. Si hace falta, ajustalo haciendo click en el mapa.'
+  mapInputSuccess.value = 'Mapa aproximado actualizado con la dirección cargada. Si hace falta, ajustalo haciendo click en el mapa.'
   mapSelectionMode.value = 'auto'
   form.value = {
     ...form.value,
     mapLatitude: lat,
     mapLongitude: lng,
   }
-  isSyncingMapsInput.value = true
-  mapsInput.value = formatMapPin(lat, lng)
-  isSyncingMapsInput.value = false
 }
 
 function handleMapsInputBlur() {
@@ -521,9 +529,9 @@ function handleManualCoordinateInput() {
         <div class="md:col-span-2 rounded-2xl border border-emerald-100 bg-emerald-50/60 p-4">
           <div class="flex items-start justify-between gap-3">
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Ubicación exacta en Google Maps</label>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Ubicación aproximada en el mapa</label>
               <p class="text-xs text-gray-500">
-                Si completás dirección, altura y ciudad, el mapa intenta ubicarse solo. También podés pegar un link de Google Maps o marcar el punto exacto manualmente.
+                El mapa usa dirección, zona y ciudad para ubicarse de forma aproximada. Solo si querés fijar un punto exacto, pegá un link de Google Maps o coordenadas.
               </p>
             </div>
             <button
@@ -541,7 +549,7 @@ function handleManualCoordinateInput() {
               v-model="mapsInput"
               type="text"
               class="w-full rounded-xl border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-primary-500"
-              placeholder="Pegá link de Google Maps o coordenadas"
+              placeholder="Opcional: pegá link exacto de Google Maps o coordenadas"
               @blur="handleMapsInputBlur"
               @paste="handleMapsPaste"
               @keydown.enter.prevent="handleMapsInputBlur"
@@ -556,6 +564,9 @@ function handleManualCoordinateInput() {
               :latitude="form.mapLatitude"
               :longitude="form.mapLongitude"
               :search-query="mapSearchQuery"
+              :address="form.address"
+              :city="form.city"
+              :area="normalizedMapArea"
               :lock-suggested-search="isMapSearchLocked"
               @update:coordinates="handleMapPickerUpdate"
               @suggested-coordinates="handleMapSuggestedCoordinates"
