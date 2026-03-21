@@ -1,7 +1,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { fetchAllProperties } from '../../services/properties'
+import { fetchAdminStats } from '../../services/properties'
 
 const router = useRouter()
 const route = useRoute()
@@ -35,12 +35,12 @@ onMounted(async () => {
   }
 
   try {
-    const list = await fetchAllProperties()
+    const nextStats = await fetchAdminStats()
     stats.value = {
-      total: list.length,
-      active: list.filter(p => p.status === 'available').length,
-      sold: list.filter(p => p.status === 'sold').length,
-      reserved: list.filter(p => p.status === 'reserved').length,
+      total: Number(nextStats.total) || 0,
+      active: Number(nextStats.active) || 0,
+      sold: Number(nextStats.sold) || 0,
+      reserved: Number(nextStats.reserved) || 0,
     }
   } finally {
     loading.value = false

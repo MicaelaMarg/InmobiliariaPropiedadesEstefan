@@ -234,6 +234,25 @@ export async function fetchAllProperties(filters = {}) {
   return res.json()
 }
 
+export async function fetchAdminStats() {
+  if (USE_MOCK) {
+    const list = getMockList()
+    return {
+      total: list.length,
+      active: list.filter(p => p.status === 'available').length,
+      sold: list.filter(p => p.status === 'sold').length,
+      reserved: list.filter(p => p.status === 'reserved').length,
+    }
+  }
+
+  assertApiConfigured()
+  const res = await fetch(buildUrl('/admin/properties', { stats: 1 }), {
+    headers: getAuthHeader(),
+  })
+  if (!res.ok) throw new Error('Error al cargar estadísticas')
+  return res.json()
+}
+
 export async function fetchPropertyById(id) {
   if (USE_MOCK) return getMockList().find(p => p.id === id) || null
 

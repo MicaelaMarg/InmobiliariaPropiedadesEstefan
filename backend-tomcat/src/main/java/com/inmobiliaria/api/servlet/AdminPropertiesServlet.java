@@ -32,6 +32,11 @@ public class AdminPropertiesServlet extends HttpServlet {
 
     try {
       if (id == null) {
+        if (parseBoolean(req.getParameter("stats")) == Boolean.TRUE) {
+          JsonUtil.writeJson(resp, HttpServletResponse.SC_OK, repository.findAdminStats());
+          return;
+        }
+
         JsonUtil.writeJson(
           resp,
           HttpServletResponse.SC_OK,

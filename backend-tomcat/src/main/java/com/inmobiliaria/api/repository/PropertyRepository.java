@@ -34,6 +34,10 @@ public class PropertyRepository {
            observations, youtube_url, created_at, updated_at
     from properties
     """;
+  private static final String ADMIN_LIST_SELECT = """
+    select id, slug, title, type, operation, price, currency, reference_code, status, is_published
+    from properties
+    """;
 
   public List<Property> findPublic(String operation, String type, Double minPrice, Double maxPrice, String location, Boolean featured)
     throws SQLException {
@@ -111,7 +115,7 @@ public class PropertyRepository {
   }
 
   public List<Property> findAdmin(String search, String status, Boolean isPublished) throws SQLException {
-    StringBuilder sql = new StringBuilder(BASE_SELECT).append(" where 1 = 1");
+    StringBuilder sql = new StringBuilder(ADMIN_LIST_SELECT).append(" where 1 = 1");
     List<Object> params = new ArrayList<>();
 
     if (notBlank(search)) {
@@ -137,7 +141,27 @@ public class PropertyRepository {
     }
 
     sql.append(" order by id desc");
-    return query(sql.toString(), params, false, false);
+    return queryAdminList(sql.toString(), params);
+  }
+
+  public Map<String, Long> findAdminStats() throws SQLException {
+    try (Connection connection = Database.getConnection();
+         PreparedStatement statement = connection.prepareStatement("""
+           select count(*) as total,
+                  sum(case when status = 'available' then 1 else 0 end) as active,
+                  sum(case when status = 'sold' then 1 else 0 end) as sold,
+                  sum(case when status = 'reserved' then 1 else 0 end) as reserved
+             from properties
+           """);
+         ResultSet rs = statement.executeQuery()) {
+      rs.next();
+      Map<String, Long> stats = new HashMap<>();
+      stats.put("total", rs.getLong("total"));
+      stats.put("active", rs.getLong("active"));
+      stats.put("sold", rs.getLong("sold"));
+      stats.put("reserved", rs.getLong("reserved"));
+      return stats;
+    }
   }
 
   public Property findById(long id) throws SQLException {
@@ -276,6 +300,31 @@ public class PropertyRepository {
           result.add(property);
         }
         attachImages(connection, result, includeAllImages, publicAssetUrls);
+        return result;
+      }
+    }
+  }
+
+  private List<Property> queryAdminList(String sql, List<Object> params) throws SQLException {
+    try (Connection connection = Database.getConnection();
+         PreparedStatement statement = connection.prepareStatement(sql)) {
+      bindParams(statement, params);
+      try (ResultSet rs = statement.executeQuery()) {
+        List<Property> result = new ArrayList<>();
+        while (rs.next()) {
+          Property property = new Property();
+          property.id = rs.getString("id");
+          property.slug = rs.getString("slug");
+          property.title = rs.getString("title");
+          property.type = rs.getString("type");
+          property.operation = rs.getString("operation");
+          property.price = getNullableDouble(rs, "price");
+          property.currency = rs.getString("currency");
+          property.referenceCode = rs.getString("reference_code");
+          property.status = rs.getString("status");
+          property.isPublished = rs.getBoolean("is_published");
+          result.add(property);
+        }
         return result;
       }
     }
