@@ -1,5 +1,6 @@
 <script setup>
 import { computed, ref, watch } from 'vue'
+import { useAppStore } from '../../stores/app'
 import AdminMapPicker from '../admin/AdminMapPicker.vue'
 import {
   PROPERTY_TYPES,
@@ -16,6 +17,7 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['update:modelValue'])
+const app = useAppStore()
 
 function createDefaultForm() {
   return {
@@ -53,8 +55,8 @@ function createDefaultForm() {
   paymentOptions: [],
   services: [],
   hasExpenses: false,
-  contactPhone: '',
-  contactEmail: '',
+  contactPhone: app.settings.whatsapp || '',
+  contactEmail: app.settings.email || '',
   observations: '',
   youtubeUrl: '',
   }
