@@ -85,7 +85,7 @@ function nextPage() {
         description="No encontramos propiedades con los filtros aplicados. Probá cambiar los criterios."
       />
       <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        <PropertyCard v-for="prop in properties" :key="prop.id" :property="prop" />
+        <PropertyCard v-for="prop in properties" :key="prop.id" :property="prop" open-in-new-tab />
       </div>
       <div v-if="properties.length" class="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <p class="text-sm text-gray-500">
