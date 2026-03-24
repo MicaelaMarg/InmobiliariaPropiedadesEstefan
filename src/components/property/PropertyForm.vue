@@ -78,7 +78,7 @@ function normalizeForm(value = {}) {
   const nextFeatures = Array.isArray(value.features) ? value.features : []
   const nextHighlightedMessages = Array.isArray(value.highlightedMessages) ? value.highlightedMessages : []
   const nextPaymentOptions = Array.isArray(value.paymentOptions) ? value.paymentOptions : []
-  const nextServices = Array.isArray(value.services) ? value.services : []
+  const nextServices = Array.isArray(value.services) ? value.services.filter(item => item !== 'expensas') : []
   return {
     ...createDefaultForm(),
     ...value,
@@ -525,6 +525,13 @@ function handleManualCoordinateInput() {
             <span>{{ item.label }}</span>
           </label>
         </div>
+        <div class="mt-4 max-w-xs">
+          <label class="block text-sm font-medium text-gray-700 mb-1">¿Cuenta con expensas?</label>
+          <select v-model="form.hasExpenses" class="w-full rounded-xl border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-primary-500">
+            <option :value="true">Sí</option>
+            <option :value="false">No</option>
+          </select>
+        </div>
       </div>
     </section>
 
@@ -538,13 +545,6 @@ function handleManualCoordinateInput() {
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">País</label>
           <input v-model="form.country" type="text" class="w-full rounded-xl border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-primary-500" placeholder="Argentina" />
-        </div>
-        <div class="md:col-span-2">
-          <label class="block text-sm font-medium text-gray-700 mb-1">¿Cuenta con expensas?</label>
-          <select v-model="form.hasExpenses" class="w-full rounded-xl border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-primary-500">
-            <option :value="true">Sí</option>
-            <option :value="false">No</option>
-          </select>
         </div>
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">Calle</label>

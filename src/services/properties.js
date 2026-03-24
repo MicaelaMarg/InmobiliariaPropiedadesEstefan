@@ -342,6 +342,12 @@ export async function fetchPropertiesPublic(filters = {}) {
     if (filters.type) list = list.filter(p => p.type === filters.type)
     if (filters.minPrice != null) list = list.filter(p => p.price >= filters.minPrice)
     if (filters.maxPrice != null) list = list.filter(p => p.price <= filters.maxPrice)
+    if (filters.aptoCredito === 'si') {
+      list = list.filter(p => (p.highlightedMessages || []).includes('apto_credito'))
+    }
+    if (filters.aptoCredito === 'no') {
+      list = list.filter(p => !(p.highlightedMessages || []).includes('apto_credito'))
+    }
     if (filters.location) {
       const loc = filters.location.toLowerCase()
       list = list.filter(p => (p.location + ' ' + p.city).toLowerCase().includes(loc))

@@ -13,6 +13,7 @@ const filters = ref({
   type: props.modelValue.type || '',
   minPrice: props.modelValue.minPrice ?? '',
   maxPrice: props.modelValue.maxPrice ?? '',
+  aptoCredito: props.modelValue.aptoCredito || '',
   location: props.modelValue.location || '',
 })
 
@@ -24,6 +25,7 @@ watch(
     if (v.type) out.type = v.type
     if (v.minPrice !== '') out.minPrice = Number(v.minPrice)
     if (v.maxPrice !== '') out.maxPrice = Number(v.maxPrice)
+    if (v.aptoCredito) out.aptoCredito = v.aptoCredito
     if (v.location?.trim()) out.location = v.location.trim()
     emit('update:modelValue', out)
   },
@@ -36,6 +38,7 @@ function clearFilters() {
     type: '',
     minPrice: '',
     maxPrice: '',
+    aptoCredito: '',
     location: '',
   }
   emit('search')
@@ -44,55 +47,68 @@ function clearFilters() {
 
 <template>
   <div class="bg-white rounded-2xl shadow-card p-4 md:p-6">
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">Operación</label>
-        <select
-          v-model="filters.operation"
-          class="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm focus:border-emerald-700 focus:ring-2 focus:ring-emerald-200"
-        >
-          <option value="">Todas</option>
-          <option v-for="op in OPERATIONS" :key="op.value" :value="op.value">{{ op.label }}</option>
-        </select>
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">Tipo</label>
-        <select
-          v-model="filters.type"
-          class="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm focus:border-emerald-700 focus:ring-2 focus:ring-emerald-200"
-        >
-          <option value="">Todos</option>
-          <option v-for="t in PROPERTY_TYPES" :key="t.value" :value="t.value">{{ t.label }}</option>
-        </select>
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">Precio mín.</label>
-        <input
-          v-model.number="filters.minPrice"
-          type="number"
-          min="0"
-          placeholder="0"
-          class="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm focus:border-emerald-700 focus:ring-2 focus:ring-emerald-200"
-        />
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">Precio máx.</label>
-        <input
-          v-model.number="filters.maxPrice"
-          type="number"
-          min="0"
-          placeholder="Sin tope"
-          class="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm focus:border-emerald-700 focus:ring-2 focus:ring-emerald-200"
-        />
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">Ubicación</label>
-        <input
-          v-model="filters.location"
-          type="text"
-          placeholder="Ciudad o zona"
-          class="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm focus:border-emerald-700 focus:ring-2 focus:ring-emerald-200"
-        />
+    <div class="overflow-x-auto pb-2">
+      <div class="flex min-w-[1120px] items-end gap-4">
+        <div class="w-[170px] flex-shrink-0">
+          <label class="block text-sm font-medium text-gray-700 mb-1">Operación</label>
+          <select
+            v-model="filters.operation"
+            class="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm focus:border-emerald-700 focus:ring-2 focus:ring-emerald-200"
+          >
+            <option value="">Todas</option>
+            <option v-for="op in OPERATIONS" :key="op.value" :value="op.value">{{ op.label }}</option>
+          </select>
+        </div>
+        <div class="w-[170px] flex-shrink-0">
+          <label class="block text-sm font-medium text-gray-700 mb-1">Tipo</label>
+          <select
+            v-model="filters.type"
+            class="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm focus:border-emerald-700 focus:ring-2 focus:ring-emerald-200"
+          >
+            <option value="">Todos</option>
+            <option v-for="t in PROPERTY_TYPES" :key="t.value" :value="t.value">{{ t.label }}</option>
+          </select>
+        </div>
+        <div class="w-[160px] flex-shrink-0">
+          <label class="block text-sm font-medium text-gray-700 mb-1">Precio mín.</label>
+          <input
+            v-model.number="filters.minPrice"
+            type="number"
+            min="0"
+            placeholder="0"
+            class="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm focus:border-emerald-700 focus:ring-2 focus:ring-emerald-200"
+          />
+        </div>
+        <div class="w-[160px] flex-shrink-0">
+          <label class="block text-sm font-medium text-gray-700 mb-1">Precio máx.</label>
+          <input
+            v-model.number="filters.maxPrice"
+            type="number"
+            min="0"
+            placeholder="Sin tope"
+            class="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm focus:border-emerald-700 focus:ring-2 focus:ring-emerald-200"
+          />
+        </div>
+        <div class="w-[160px] flex-shrink-0">
+          <label class="block text-sm font-medium text-gray-700 mb-1">Apto crédito</label>
+          <select
+            v-model="filters.aptoCredito"
+            class="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm focus:border-emerald-700 focus:ring-2 focus:ring-emerald-200"
+          >
+            <option value="">Todos</option>
+            <option value="si">Sí</option>
+            <option value="no">No</option>
+          </select>
+        </div>
+        <div class="w-[260px] flex-shrink-0">
+          <label class="block text-sm font-medium text-gray-700 mb-1">Ubicación</label>
+          <input
+            v-model="filters.location"
+            type="text"
+            placeholder="Ciudad o zona"
+            class="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm focus:border-emerald-700 focus:ring-2 focus:ring-emerald-200"
+          />
+        </div>
       </div>
     </div>
     <div class="mt-4 flex justify-end gap-2">

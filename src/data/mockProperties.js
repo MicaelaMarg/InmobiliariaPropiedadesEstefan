@@ -54,7 +54,6 @@ export const SERVICE_OPTIONS = [
   { value: 'electricidad', label: 'Electricidad' },
   { value: 'internet', label: 'Internet' },
   { value: 'pavimento', label: 'Pavimento' },
-  { value: 'expensas', label: 'Expensas' },
 ]
 
 const mockProperties = [

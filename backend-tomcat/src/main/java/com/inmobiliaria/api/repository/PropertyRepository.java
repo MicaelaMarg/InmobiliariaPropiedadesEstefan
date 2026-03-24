@@ -39,9 +39,9 @@ public class PropertyRepository {
     from properties
     """;
 
-  public List<Property> findPublic(String operation, String type, Double minPrice, Double maxPrice, String location, Boolean featured)
+  public List<Property> findPublic(String operation, String type, Double minPrice, Double maxPrice, String aptoCredito, String location, Boolean featured)
     throws SQLException {
-    return findPublicPage(operation, type, minPrice, maxPrice, location, featured, 1, DEFAULT_PUBLIC_PAGE_SIZE).items;
+    return findPublicPage(operation, type, minPrice, maxPrice, aptoCredito, location, featured, 1, DEFAULT_PUBLIC_PAGE_SIZE).items;
   }
 
   public PublicPropertyPage findPublicPage(
@@ -49,6 +49,7 @@ public class PropertyRepository {
     String type,
     Double minPrice,
     Double maxPrice,
+    String aptoCredito,
     String location,
     Boolean featured,
     Integer page,
@@ -78,6 +79,16 @@ public class PropertyRepository {
       sql.append(" and price <= ?");
       countSql.append(" and price <= ?");
       params.add(maxPrice);
+    }
+    if ("si".equalsIgnoreCase(aptoCredito)) {
+      sql.append(" and lower(coalesce(highlighted_messages, '')) like ?");
+      countSql.append(" and lower(coalesce(highlighted_messages, '')) like ?");
+      params.add("%apto_credito%");
+    }
+    if ("no".equalsIgnoreCase(aptoCredito)) {
+      sql.append(" and lower(coalesce(highlighted_messages, '')) not like ?");
+      countSql.append(" and lower(coalesce(highlighted_messages, '')) not like ?");
+      params.add("%apto_credito%");
     }
     if (notBlank(location)) {
       sql.append(" and lower(concat(coalesce(location,''),' ',coalesce(city,''))) like ?");
