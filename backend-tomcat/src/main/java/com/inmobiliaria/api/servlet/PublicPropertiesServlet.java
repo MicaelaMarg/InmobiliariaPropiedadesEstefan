@@ -20,6 +20,7 @@ public class PublicPropertiesServlet extends HttpServlet {
         HttpServletResponse.SC_OK,
         repository.findPublicPage(
           req.getParameter("operation"),
+          req.getParameter("operationTag"),
           req.getParameter("type"),
           parseDouble(req.getParameter("minPrice")),
           parseDouble(req.getParameter("maxPrice")),

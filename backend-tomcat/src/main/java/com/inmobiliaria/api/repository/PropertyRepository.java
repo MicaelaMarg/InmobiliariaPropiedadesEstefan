@@ -39,13 +39,23 @@ public class PropertyRepository {
     from properties
     """;
 
-  public List<Property> findPublic(String operation, String type, Double minPrice, Double maxPrice, String aptoCredito, String location, Boolean featured)
+  public List<Property> findPublic(
+    String operation,
+    String operationTag,
+    String type,
+    Double minPrice,
+    Double maxPrice,
+    String aptoCredito,
+    String location,
+    Boolean featured
+  )
     throws SQLException {
-    return findPublicPage(operation, type, minPrice, maxPrice, aptoCredito, location, featured, 1, DEFAULT_PUBLIC_PAGE_SIZE).items;
+    return findPublicPage(operation, operationTag, type, minPrice, maxPrice, aptoCredito, location, featured, 1, DEFAULT_PUBLIC_PAGE_SIZE).items;
   }
 
   public PublicPropertyPage findPublicPage(
     String operation,
+    String operationTag,
     String type,
     Double minPrice,
     Double maxPrice,
@@ -64,6 +74,13 @@ public class PropertyRepository {
       sql.append(" and operation = ?");
       countSql.append(" and operation = ?");
       params.add(operation);
+    }
+    if (notBlank(operationTag)) {
+      sql.append(" and (lower(coalesce(highlighted_messages, '')) like ? or lower(coalesce(payment_options, '')) like ?)");
+      countSql.append(" and (lower(coalesce(highlighted_messages, '')) like ? or lower(coalesce(payment_options, '')) like ?)");
+      String tagPattern = "%\"" + operationTag.trim().toLowerCase() + "\"%";
+      params.add(tagPattern);
+      params.add(tagPattern);
     }
     if (notBlank(type)) {
       sql.append(" and type = ?");

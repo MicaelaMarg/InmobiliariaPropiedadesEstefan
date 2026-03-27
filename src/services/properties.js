@@ -339,6 +339,13 @@ export async function fetchPropertiesPublic(filters = {}) {
   if (USE_MOCK) {
     let list = getMockList().filter(p => p.isPublished)
     if (filters.operation) list = list.filter(p => p.operation === filters.operation)
+    if (filters.operationTag) {
+      list = list.filter(
+        p =>
+          (p.highlightedMessages || []).includes(filters.operationTag) ||
+          (p.paymentOptions || []).includes(filters.operationTag)
+      )
+    }
     if (filters.type) list = list.filter(p => p.type === filters.type)
     if (filters.minPrice != null) list = list.filter(p => p.price >= filters.minPrice)
     if (filters.maxPrice != null) list = list.filter(p => p.price <= filters.maxPrice)
