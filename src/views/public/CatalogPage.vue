@@ -6,6 +6,11 @@ import PropertyFilters from '../../components/property/PropertyFilters.vue'
 import LoadingSpinner from '../../components/ui/LoadingSpinner.vue'
 import EmptyState from '../../components/ui/EmptyState.vue'
 import { fetchPropertiesPublic } from '../../services/properties'
+import {
+  PROPERTY_TYPES,
+  HIGHLIGHTED_MESSAGE_OPTIONS,
+  PAYMENT_OPTION_OPTIONS,
+} from '../../data/mockProperties'
 
 const route = useRoute()
 const properties = ref([])
@@ -18,11 +23,43 @@ const totalPages = ref(1)
 
 const queryFromRoute = computed(() => route.query.q || '')
 const queryReference = computed(() => route.query.ref || route.query.reference || '')
+const filterOptionLabels = new Map(
+  [...HIGHLIGHTED_MESSAGE_OPTIONS, ...PAYMENT_OPTION_OPTIONS].map(option => [option.value, option.label])
+)
+const propertyTypeLabels = new Map(PROPERTY_TYPES.map(type => [type.value, type.label]))
+
+const selectedConditionLabel = computed(() => filterOptionLabels.get(filters.value.operationTag) || '')
+const selectedTypeLabel = computed(() => propertyTypeLabels.get(filters.value.type) || '')
+
+const emptyStateTitle = computed(() => {
+  if (selectedConditionLabel.value) return 'No encontramos coincidencias'
+  return 'No hay propiedades'
+})
+
+const emptyStateDescription = computed(() => {
+  const typeFragment = selectedTypeLabel.value ? ` de tipo ${selectedTypeLabel.value.toLowerCase()}` : ''
+  const conditionFragment = selectedConditionLabel.value ? ` con ${selectedConditionLabel.value.toLowerCase()}` : ''
+
+  if (typeFragment || conditionFragment) {
+    return `En este momento no disponemos de propiedades${typeFragment}${conditionFragment}. Probá con otra búsqueda o quitá algún filtro.`
+  }
+
+  return 'No encontramos propiedades con los filtros aplicados. Probá cambiar los criterios.'
+})
 
 watch(
   () => route.query,
   () => load(),
   { deep: true }
+)
+
+watch(
+  () => filters.value.operationTag,
+  (nextValue, previousValue) => {
+    if (nextValue === previousValue) return
+    page.value = 1
+    load(1)
+  }
 )
 
 onMounted(() => {
@@ -81,8 +118,8 @@ function nextPage() {
     <template v-else>
       <EmptyState
         v-if="!properties.length"
-        title="No hay propiedades"
-        description="No encontramos propiedades con los filtros aplicados. Probá cambiar los criterios."
+        :title="emptyStateTitle"
+        :description="emptyStateDescription"
       />
       <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         <PropertyCard v-for="prop in properties" :key="prop.id" :property="prop" open-in-new-tab />
