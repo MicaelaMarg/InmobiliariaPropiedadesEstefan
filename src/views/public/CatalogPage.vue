@@ -1,6 +1,6 @@
 <script setup>
-import { ref, computed, watch, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
+import { ref, computed, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import PropertyCard from '../../components/property/PropertyCard.vue'
 import PropertyFilters from '../../components/property/PropertyFilters.vue'
 import LoadingSpinner from '../../components/ui/LoadingSpinner.vue'
@@ -13,6 +13,7 @@ import {
 } from '../../data/mockProperties'
 
 const route = useRoute()
+const router = useRouter()
 const properties = ref([])
 const loading = ref(true)
 const filters = ref({})
@@ -20,16 +21,117 @@ const page = ref(1)
 const pageSize = 12
 const total = ref(0)
 const totalPages = ref(1)
-
-const queryFromRoute = computed(() => route.query.q || '')
-const queryReference = computed(() => route.query.ref || route.query.reference || '')
 const filterOptionLabels = new Map(
   [...HIGHLIGHTED_MESSAGE_OPTIONS, ...PAYMENT_OPTION_OPTIONS].map(option => [option.value, option.label])
 )
 const propertyTypeLabels = new Map(PROPERTY_TYPES.map(type => [type.value, type.label]))
+const syncingFromRoute = ref(false)
 
 const selectedConditionLabel = computed(() => filterOptionLabels.get(filters.value.operationTag) || '')
 const selectedTypeLabel = computed(() => propertyTypeLabels.get(filters.value.type) || '')
+
+function getQueryValue(value) {
+  if (Array.isArray(value)) return value[0] || ''
+  return typeof value === 'string' ? value : ''
+}
+
+function normalizeText(value) {
+  return String(value || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim()
+}
+
+function resolveSpecialOperationTag(value) {
+  const normalized = normalizeText(value)
+  const compact = normalized.replace(/\s+/g, '')
+
+  if (normalized === 'apto credito' || compact === 'aptocredito') return 'apto_credito'
+  if (normalized === 'financiado' || normalized === 'refinanciado') return 'financiado'
+
+  return ''
+}
+
+function parseNumberValue(value) {
+  const raw = getQueryValue(value)
+  if (!raw) return ''
+
+  const parsed = Number(raw)
+  return Number.isFinite(parsed) ? parsed : ''
+}
+
+function parsePageValue(value) {
+  const parsed = Number(getQueryValue(value))
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : 1
+}
+
+function buildFiltersFromQuery(query) {
+  const nextFilters = {}
+  const operation = getQueryValue(query.operation)
+  const type = getQueryValue(query.type)
+  const locationQuery = getQueryValue(query.q || query.location)
+  const reference = getQueryValue(query.ref || query.reference)
+  const routeOperationTag = getQueryValue(query.operationTag || query.tag)
+  const normalizedRouteOperationTag = resolveSpecialOperationTag(routeOperationTag) || routeOperationTag
+  const specialLocationOperationTag = resolveSpecialOperationTag(locationQuery)
+  const minPrice = parseNumberValue(query.minPrice)
+  const maxPrice = parseNumberValue(query.maxPrice)
+
+  if (operation) nextFilters.operation = operation
+  if (type) nextFilters.type = type
+  if (minPrice !== '') nextFilters.minPrice = minPrice
+  if (maxPrice !== '') nextFilters.maxPrice = maxPrice
+  if (normalizedRouteOperationTag) {
+    nextFilters.operationTag = normalizedRouteOperationTag
+  } else if (specialLocationOperationTag) {
+    nextFilters.operationTag = specialLocationOperationTag
+  }
+  if (locationQuery && !specialLocationOperationTag) nextFilters.location = locationQuery
+  if (reference) nextFilters.search = reference
+
+  return nextFilters
+}
+
+function buildQueryFromFilters(activeFilters = {}, targetPage = 1) {
+  const query = {}
+  const normalizedLocation = activeFilters.location?.trim() || ''
+  const specialLocationOperationTag = resolveSpecialOperationTag(normalizedLocation)
+
+  if (activeFilters.operation) query.operation = activeFilters.operation
+  if (activeFilters.type) query.type = activeFilters.type
+  if (activeFilters.minPrice !== '' && activeFilters.minPrice != null) {
+    query.minPrice = String(activeFilters.minPrice)
+  }
+  if (activeFilters.maxPrice !== '' && activeFilters.maxPrice != null) {
+    query.maxPrice = String(activeFilters.maxPrice)
+  }
+  if (activeFilters.operationTag) {
+    query.operationTag = activeFilters.operationTag
+  } else if (specialLocationOperationTag) {
+    query.operationTag = specialLocationOperationTag
+  }
+  if (normalizedLocation && !specialLocationOperationTag) {
+    query.q = normalizedLocation
+  }
+  if (activeFilters.search?.trim()) query.ref = activeFilters.search.trim()
+  if (targetPage > 1) query.page = String(targetPage)
+
+  return query
+}
+
+function areQueriesEqual(left, right) {
+  const leftEntries = Object.entries(left)
+    .filter(([, value]) => value !== undefined && value !== null && value !== '')
+    .sort(([leftKey], [rightKey]) => leftKey.localeCompare(rightKey))
+  const rightEntries = Object.entries(right)
+    .map(([key, value]) => [key, getQueryValue(value)])
+    .filter(([, value]) => value !== undefined && value !== null && value !== '')
+    .sort(([leftKey], [rightKey]) => leftKey.localeCompare(rightKey))
+
+  return JSON.stringify(leftEntries) === JSON.stringify(rightEntries)
+}
 
 const emptyStateTitle = computed(() => {
   if (selectedConditionLabel.value) return 'No encontramos coincidencias'
@@ -49,33 +151,38 @@ const emptyStateDescription = computed(() => {
 
 watch(
   () => route.query,
-  () => load(),
-  { deep: true }
+  async (query) => {
+    const nextFilters = buildFiltersFromQuery(query)
+    const nextPage = parsePageValue(query.page)
+    const canonicalQuery = buildQueryFromFilters(nextFilters, nextPage)
+
+    if (!areQueriesEqual(canonicalQuery, query)) {
+      await router.replace({ name: 'Catalog', query: canonicalQuery })
+      return
+    }
+
+    syncingFromRoute.value = true
+    filters.value = nextFilters
+    syncingFromRoute.value = false
+
+    await load(nextPage, nextFilters)
+  },
+  { deep: true, immediate: true }
 )
 
 watch(
   () => filters.value.operationTag,
-  (nextValue, previousValue) => {
-    if (nextValue === previousValue) return
-    page.value = 1
-    load(1)
+  async (nextValue, previousValue) => {
+    if (syncingFromRoute.value || nextValue === previousValue) return
+    await syncRouteWithFilters(1)
   }
 )
 
-onMounted(() => {
-  const newFilters = { ...filters.value }
-  if (route.query.q) newFilters.location = route.query.q
-  if (queryReference.value) newFilters.search = queryReference.value
-  filters.value = newFilters
-  load()
-})
-
-async function load(nextPage = page.value) {
+async function load(nextPage = page.value, nextFilters = filters.value) {
   loading.value = true
   try {
-    const f = { ...filters.value }
-    if (queryFromRoute.value) f.location = queryFromRoute.value
-    if (queryReference.value) f.search = queryReference.value
+    const f = { ...nextFilters }
+    const requestedPage = nextPage
     f.page = nextPage
     f.limit = pageSize
     const result = await fetchPropertiesPublic(f)
@@ -83,6 +190,13 @@ async function load(nextPage = page.value) {
     total.value = result.total || 0
     page.value = result.page || nextPage
     totalPages.value = result.totalPages || 1
+
+    if (result.page !== requestedPage) {
+      const canonicalQuery = buildQueryFromFilters(nextFilters, result.page || 1)
+      if (!areQueriesEqual(canonicalQuery, route.query)) {
+        await router.replace({ name: 'Catalog', query: canonicalQuery })
+      }
+    }
   } catch {
     properties.value = []
     total.value = 0
@@ -92,19 +206,28 @@ async function load(nextPage = page.value) {
   }
 }
 
+async function syncRouteWithFilters(targetPage = 1) {
+  const nextQuery = buildQueryFromFilters(filters.value, targetPage)
+  if (areQueriesEqual(nextQuery, route.query)) {
+    await load(targetPage, filters.value)
+    return
+  }
+
+  await router.push({ name: 'Catalog', query: nextQuery })
+}
+
 function onSearch() {
-  page.value = 1
-  load(1)
+  syncRouteWithFilters(1)
 }
 
 function previousPage() {
   if (page.value <= 1) return
-  load(page.value - 1)
+  syncRouteWithFilters(page.value - 1)
 }
 
 function nextPage() {
   if (page.value >= totalPages.value) return
-  load(page.value + 1)
+  syncRouteWithFilters(page.value + 1)
 }
 </script>
 

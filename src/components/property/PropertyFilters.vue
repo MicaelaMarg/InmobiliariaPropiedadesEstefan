@@ -13,14 +13,29 @@ const props = defineProps({
 
 const emit = defineEmits(['update:modelValue', 'search'])
 
-const filters = ref({
-  operation: props.modelValue.operation || '',
-  operationTag: props.modelValue.operationTag || '',
-  type: props.modelValue.type || '',
-  minPrice: props.modelValue.minPrice ?? '',
-  maxPrice: props.modelValue.maxPrice ?? '',
-  location: props.modelValue.location || '',
-})
+function buildFiltersState(value = {}) {
+  return {
+    operation: value.operation || '',
+    operationTag: value.operationTag || '',
+    type: value.type || '',
+    minPrice: value.minPrice ?? '',
+    maxPrice: value.maxPrice ?? '',
+    location: value.location || '',
+  }
+}
+
+const filters = ref(buildFiltersState(props.modelValue))
+
+watch(
+  () => props.modelValue,
+  (nextValue) => {
+    const nextFilters = buildFiltersState(nextValue)
+    if (JSON.stringify(nextFilters) !== JSON.stringify(filters.value)) {
+      filters.value = nextFilters
+    }
+  },
+  { deep: true }
+)
 
 watch(
   filters,
