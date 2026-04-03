@@ -46,7 +46,7 @@ watch(
     if (v.type) out.type = v.type
     if (v.minPrice !== '') out.minPrice = Number(v.minPrice)
     if (v.maxPrice !== '') out.maxPrice = Number(v.maxPrice)
-    if (v.location?.trim()) out.location = v.location.trim()
+    if (typeof v.location === 'string' && v.location.trim()) out.location = v.location
     emit('update:modelValue', out)
   },
   { deep: true }
