@@ -332,6 +332,17 @@ function slugify(text) {
     .replace(/(^-|-$)/g, '')
 }
 
+function matchesRoomsFilter(property, roomsFilter) {
+  if (!roomsFilter) return true
+
+  const rooms = Number(property.rooms)
+  if (!Number.isFinite(rooms)) return false
+
+  if (roomsFilter === '5_plus') return rooms >= 5
+  const expected = Number(roomsFilter)
+  return Number.isFinite(expected) && rooms === expected
+}
+
 function hasExactOperationTag(property, operationTag) {
   const normalizedTag = typeof operationTag === 'string' ? operationTag.trim().toLowerCase() : ''
   if (!normalizedTag) return true
@@ -349,6 +360,7 @@ export async function fetchPropertiesPublic(filters = {}) {
     if (filters.operation) list = list.filter(p => p.operation === filters.operation)
     if (filters.operationTag) list = list.filter(p => hasExactOperationTag(p, filters.operationTag))
     if (filters.type) list = list.filter(p => p.type === filters.type)
+    if (filters.rooms) list = list.filter(p => matchesRoomsFilter(p, filters.rooms))
     if (filters.minPrice != null) list = list.filter(p => p.price >= filters.minPrice)
     if (filters.maxPrice != null) list = list.filter(p => p.price <= filters.maxPrice)
     if (filters.aptoCredito === 'si') {

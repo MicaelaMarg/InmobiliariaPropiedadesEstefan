@@ -5,6 +5,7 @@ import {
   OPERATIONS,
   HIGHLIGHTED_MESSAGE_OPTIONS,
   PAYMENT_OPTION_OPTIONS,
+  ROOMS_FILTER_OPTIONS,
 } from '../../data/mockProperties'
 
 const props = defineProps({
@@ -18,6 +19,7 @@ function buildFiltersState(value = {}) {
     operation: value.operation || '',
     operationTag: value.operationTag || '',
     type: value.type || '',
+    rooms: value.rooms || '',
     minPrice: value.minPrice ?? '',
     maxPrice: value.maxPrice ?? '',
     location: value.location || '',
@@ -44,6 +46,7 @@ watch(
     if (v.operation) out.operation = v.operation
     if (v.operationTag) out.operationTag = v.operationTag
     if (v.type) out.type = v.type
+    if (v.rooms) out.rooms = v.rooms
     if (v.minPrice !== '') out.minPrice = Number(v.minPrice)
     if (v.maxPrice !== '') out.maxPrice = Number(v.maxPrice)
     if (typeof v.location === 'string' && v.location.trim()) out.location = v.location
@@ -57,6 +60,7 @@ function clearFilters() {
     operation: '',
     operationTag: '',
     type: '',
+    rooms: '',
     minPrice: '',
     maxPrice: '',
     location: '',
@@ -68,7 +72,7 @@ function clearFilters() {
 <template>
   <div class="bg-white rounded-2xl shadow-card p-4 md:p-6">
     <div class="pb-2">
-      <div class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
+      <div class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-7">
         <div class="2xl:min-w-0">
           <label class="block text-sm font-medium text-gray-700 mb-1">Operación</label>
           <select
@@ -87,6 +91,17 @@ function clearFilters() {
           >
             <option value="">Todos</option>
             <option v-for="t in PROPERTY_TYPES" :key="t.value" :value="t.value">{{ t.label }}</option>
+          </select>
+        </div>
+        <div class="2xl:min-w-0">
+          <label class="block text-sm font-medium text-gray-700 mb-1">Ambientes</label>
+          <select
+            v-model="filters.rooms"
+            class="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm focus:border-emerald-700 focus:ring-2 focus:ring-emerald-200"
+          >
+            <option v-for="option in ROOMS_FILTER_OPTIONS" :key="option.value || 'all'" :value="option.value">
+              {{ option.label }}
+            </option>
           </select>
         </div>
         <div class="2xl:min-w-0">

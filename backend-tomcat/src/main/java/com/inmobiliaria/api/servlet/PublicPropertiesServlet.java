@@ -22,6 +22,7 @@ public class PublicPropertiesServlet extends HttpServlet {
           req.getParameter("operation"),
           req.getParameter("operationTag"),
           req.getParameter("type"),
+          req.getParameter("rooms"),
           parseDouble(req.getParameter("minPrice")),
           parseDouble(req.getParameter("maxPrice")),
           req.getParameter("aptoCredito"),

@@ -56,6 +56,15 @@ export const SERVICE_OPTIONS = [
   { value: 'pavimento', label: 'Pavimento' },
 ]
 
+export const ROOMS_FILTER_OPTIONS = [
+  { value: '', label: 'Todos' },
+  { value: '1', label: 'Monoambiente' },
+  { value: '2', label: '2 ambientes' },
+  { value: '3', label: '3 ambientes' },
+  { value: '4', label: '4 ambientes' },
+  { value: '5_plus', label: '5 o más ambientes' },
+]
+
 const mockProperties = [
   {
     id: '1',

@@ -43,6 +43,7 @@ public class PropertyRepository {
     String operation,
     String operationTag,
     String type,
+    String rooms,
     Double minPrice,
     Double maxPrice,
     String aptoCredito,
@@ -50,13 +51,14 @@ public class PropertyRepository {
     Boolean featured
   )
     throws SQLException {
-    return findPublicPage(operation, operationTag, type, minPrice, maxPrice, aptoCredito, location, featured, 1, DEFAULT_PUBLIC_PAGE_SIZE).items;
+    return findPublicPage(operation, operationTag, type, rooms, minPrice, maxPrice, aptoCredito, location, featured, 1, DEFAULT_PUBLIC_PAGE_SIZE).items;
   }
 
   public PublicPropertyPage findPublicPage(
     String operation,
     String operationTag,
     String type,
+    String rooms,
     Double minPrice,
     Double maxPrice,
     String aptoCredito,
@@ -86,6 +88,20 @@ public class PropertyRepository {
       sql.append(" and type = ?");
       countSql.append(" and type = ?");
       params.add(type);
+    }
+    if ("5_plus".equalsIgnoreCase(rooms)) {
+      sql.append(" and rooms >= ?");
+      countSql.append(" and rooms >= ?");
+      params.add(5);
+    } else if (notBlank(rooms)) {
+      try {
+        int roomCount = Integer.parseInt(rooms.trim());
+        sql.append(" and rooms = ?");
+        countSql.append(" and rooms = ?");
+        params.add(roomCount);
+      } catch (NumberFormatException ignored) {
+        // Ignorar valores de ambientes no validos.
+      }
     }
     if (minPrice != null) {
       sql.append(" and price >= ?");

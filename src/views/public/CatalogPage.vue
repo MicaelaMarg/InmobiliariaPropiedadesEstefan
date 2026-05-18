@@ -71,6 +71,7 @@ function buildFiltersFromQuery(query) {
   const nextFilters = {}
   const operation = getQueryValue(query.operation)
   const type = getQueryValue(query.type)
+  const rooms = getQueryValue(query.rooms)
   const locationQuery = getQueryValue(query.q || query.location)
   const reference = getQueryValue(query.ref || query.reference)
   const routeOperationTag = getQueryValue(query.operationTag || query.tag)
@@ -81,6 +82,7 @@ function buildFiltersFromQuery(query) {
 
   if (operation) nextFilters.operation = operation
   if (type) nextFilters.type = type
+  if (rooms) nextFilters.rooms = rooms
   if (minPrice !== '') nextFilters.minPrice = minPrice
   if (maxPrice !== '') nextFilters.maxPrice = maxPrice
   if (normalizedRouteOperationTag) {
@@ -101,6 +103,7 @@ function buildQueryFromFilters(activeFilters = {}, targetPage = 1) {
 
   if (activeFilters.operation) query.operation = activeFilters.operation
   if (activeFilters.type) query.type = activeFilters.type
+  if (activeFilters.rooms) query.rooms = activeFilters.rooms
   if (activeFilters.minPrice !== '' && activeFilters.minPrice != null) {
     query.minPrice = String(activeFilters.minPrice)
   }
