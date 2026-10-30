@@ -23,6 +23,7 @@ function buildFiltersState(value = {}) {
     minPrice: value.minPrice ?? '',
     maxPrice: value.maxPrice ?? '',
     location: value.location || '',
+    search: value.search || '',
   }
 }
 
@@ -50,6 +51,7 @@ watch(
     if (v.minPrice !== '') out.minPrice = Number(v.minPrice)
     if (v.maxPrice !== '') out.maxPrice = Number(v.maxPrice)
     if (typeof v.location === 'string' && v.location.trim()) out.location = v.location
+    if (typeof v.search === 'string' && v.search.trim()) out.search = v.search
     emit('update:modelValue', out)
   },
   { deep: true }
@@ -64,7 +66,10 @@ function clearFilters() {
     minPrice: '',
     maxPrice: '',
     location: '',
+    search: '',
   }
+  // Avisar al padre antes de buscar: el watch de filters recién corre después y la búsqueda usaría los filtros viejos.
+  emit('update:modelValue', {})
   emit('search')
 }
 </script>
@@ -72,7 +77,7 @@ function clearFilters() {
 <template>
   <div class="bg-white rounded-2xl shadow-card p-4 md:p-6">
     <div class="pb-2">
-      <div class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-7">
+      <div class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-8">
         <div class="2xl:min-w-0">
           <label class="block text-sm font-medium text-gray-700 mb-1">Operación</label>
           <select
@@ -150,6 +155,16 @@ function clearFilters() {
             type="text"
             placeholder="Ciudad o zona"
             class="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm focus:border-emerald-700 focus:ring-2 focus:ring-emerald-200"
+          />
+        </div>
+        <div class="2xl:min-w-0">
+          <label class="block text-sm font-medium text-gray-700 mb-1">Código</label>
+          <input
+            v-model="filters.search"
+            type="text"
+            placeholder="Ej: TOMCAT-001"
+            class="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm focus:border-emerald-700 focus:ring-2 focus:ring-emerald-200"
+            @keyup.enter="$emit('search')"
           />
         </div>
       </div>

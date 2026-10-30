@@ -48,10 +48,11 @@ public class PropertyRepository {
     Double maxPrice,
     String aptoCredito,
     String location,
+    String referenceCode,
     Boolean featured
   )
     throws SQLException {
-    return findPublicPage(operation, operationTag, type, rooms, minPrice, maxPrice, aptoCredito, location, featured, 1, DEFAULT_PUBLIC_PAGE_SIZE).items;
+    return findPublicPage(operation, operationTag, type, rooms, minPrice, maxPrice, aptoCredito, location, referenceCode, featured, 1, DEFAULT_PUBLIC_PAGE_SIZE).items;
   }
 
   public PublicPropertyPage findPublicPage(
@@ -63,6 +64,7 @@ public class PropertyRepository {
     Double maxPrice,
     String aptoCredito,
     String location,
+    String referenceCode,
     Boolean featured,
     Integer page,
     Integer limit
@@ -127,6 +129,11 @@ public class PropertyRepository {
       sql.append(" and lower(concat(coalesce(location,''),' ',coalesce(city,''))) like ?");
       countSql.append(" and lower(concat(coalesce(location,''),' ',coalesce(city,''))) like ?");
       params.add("%" + location.trim().toLowerCase() + "%");
+    }
+    if (notBlank(referenceCode)) {
+      sql.append(" and lower(coalesce(reference_code, '')) like ?");
+      countSql.append(" and lower(coalesce(reference_code, '')) like ?");
+      params.add("%" + escapeLike(referenceCode.trim().toLowerCase()) + "%");
     }
     if (Boolean.TRUE.equals(featured)) {
       sql.append(" and is_featured = true");
@@ -850,6 +857,11 @@ public class PropertyRepository {
 
   private static boolean notBlank(String value) {
     return value != null && !value.isBlank();
+  }
+
+  // Escapa los comodines de LIKE para buscar el texto tal cual (MySQL usa '\' como escape por defecto).
+  private static String escapeLike(String value) {
+    return value.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_");
   }
 
   private static String defaultIfBlank(String value, String fallback) {

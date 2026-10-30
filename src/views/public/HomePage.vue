@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
 import PropertyCard from '../../components/property/PropertyCard.vue'
 import LoadingSpinner from '../../components/ui/LoadingSpinner.vue'
@@ -9,7 +9,24 @@ const router = useRouter()
 const featured = ref([])
 const loading = ref(true)
 const googleReviewsUrl = 'https://maps.app.goo.gl/j8Vnf6GnBffEAH9g6'
-const HERO_VIDEO_SRC = '/images/branding/inmobiliariaafuera.webm'
+// Video horizontal (16:9) para pantallas grandes y vertical (4:5) para celulares
+const HERO_VIDEOS = {
+  desktop: {
+    webm: '/images/branding/inmobiliaria-escritorio-1920x1080.webm',
+    mp4: '/images/branding/inmobiliaria-escritorio-1920x1080.mp4',
+  },
+  mobile: {
+    webm: '/images/branding/inmobiliaria-celular-1080x1350.webm',
+    mp4: '/images/branding/inmobiliaria-celular-1080x1350.mp4',
+  },
+}
+const desktopQuery = window.matchMedia('(min-width: 1024px)')
+const isDesktop = ref(desktopQuery.matches)
+const heroVideo = computed(() => (isDesktop.value ? HERO_VIDEOS.desktop : HERO_VIDEOS.mobile))
+
+function onDesktopQueryChange(event) {
+  isDesktop.value = event.matches
+}
 
 const testimonials = [
   {
@@ -61,7 +78,12 @@ const whyChooseItems = [
   },
 ]
 
+onBeforeUnmount(() => {
+  desktopQuery.removeEventListener('change', onDesktopQueryChange)
+})
+
 onMounted(async () => {
+  desktopQuery.addEventListener('change', onDesktopQueryChange)
   try {
     featured.value = await fetchFeaturedProperties()
   } catch {
@@ -84,43 +106,43 @@ function goContact() {
 <template>
   <div>
     <!-- Hero -->
-    <section class="relative overflow-hidden bg-white">
-      <div class="pointer-events-none absolute inset-0 z-10 bg-[linear-gradient(115deg,rgba(2,6,23,0.28)_0%,rgba(2,6,23,0.16)_38%,rgba(2,6,23,0.10)_64%,rgba(2,6,23,0.22)_100%)]" />
-      <div class="grid min-h-[520px] lg:min-h-[78vh] lg:grid-cols-2">
-        <div class="relative z-10 flex items-center bg-gradient-to-br from-emerald-950 via-emerald-800 to-emerald-400 px-6 py-12 text-white sm:px-10 lg:px-16 lg:py-16 xl:px-24">
-          <div class="relative z-20 mx-auto max-w-2xl lg:max-w-xl">
-            <p class="mb-3 text-sm font-semibold uppercase tracking-[0.22em] text-emerald-100/90">Erika M. Estefan Propiedades</p>
-            <h1 class="text-4xl font-bold leading-tight md:text-5xl">
+    <!-- El banner tiene la misma proporción que el video (4:5 en celular, 16:9 en pantallas grandes) para que se vea entero -->
+    <section class="relative aspect-[4/5] overflow-hidden bg-emerald-950 lg:aspect-video lg:max-h-[calc(100vh-88px)] lg:w-full">
+      <video
+        :key="heroVideo.webm"
+        class="absolute inset-0 h-full w-full object-cover object-center"
+        autoplay
+        muted
+        loop
+        playsinline
+        preload="auto"
+        aria-label="Video principal de Erika M. Estefan Propiedades"
+      >
+        <source :src="heroVideo.webm" type="video/webm" />
+        <source :src="heroVideo.mp4" type="video/mp4" />
+      </video>
+      <div class="absolute inset-0 z-10 flex items-end">
+        <div class="w-full px-6 pb-10 text-white sm:px-10 lg:px-12 lg:pb-16 xl:px-16 xl:pb-20">
+          <div class="relative max-w-xl xl:max-w-2xl">
+            <!-- Fondo verde difuminado solo detrás del texto -->
+            <div class="pointer-events-none absolute -inset-x-8 -inset-y-8 -z-10 rounded-[48px] bg-emerald-950/85 blur-2xl lg:-inset-x-12 lg:-bottom-10 lg:-top-20" />
+            <p class="mb-4 inline-block rounded-full bg-white px-4 py-1.5 text-xs font-bold uppercase tracking-[0.22em] text-emerald-800 shadow-sm sm:text-sm">Erika M. Estefan Propiedades</p>
+            <!-- Borde verde oscuro fino + sombra para dar relieve al título sobre el video -->
+            <h1 class="text-3xl font-bold leading-tight [text-shadow:1px_1px_0_#022c22,-1px_-1px_0_#022c22,1px_-1px_0_#022c22,-1px_1px_0_#022c22,0_4px_14px_rgba(0,0,0,0.45)] sm:text-4xl lg:text-5xl xl:text-6xl">
               Encontrá tu próximo hogar o inversión
             </h1>
-            <p class="mt-5 text-lg text-emerald-50 md:text-xl">
+            <p class="mt-4 inline-block border-b border-emerald-300 pb-1 text-lg text-emerald-50 md:text-xl">
               Asesoramiento profesional.
             </p>
-            <div class="mt-8 flex flex-wrap gap-4">
-              <button type="button" class="rounded-xl bg-white px-6 py-3 text-base font-semibold text-emerald-800 transition hover:bg-emerald-50" @click="goCatalog">
+            <div class="mt-6 flex flex-wrap gap-4 lg:mt-8">
+              <button type="button" class="rounded-xl bg-white px-6 py-3 text-base font-semibold text-emerald-800 transition hover:bg-emerald-50 lg:px-7 lg:py-3.5" @click="goCatalog">
                 Ver catálogo
               </button>
-              <button type="button" class="rounded-xl border border-white/70 px-6 py-3 text-base font-semibold text-white transition hover:bg-white/10" @click="goContact">
+              <button type="button" class="rounded-xl border border-white/70 bg-emerald-950/40 px-6 py-3 text-base font-semibold text-white backdrop-blur-sm transition hover:bg-emerald-950/60 lg:px-7 lg:py-3.5" @click="goContact">
                 Contacto
               </button>
             </div>
           </div>
-          <div class="pointer-events-none absolute inset-y-0 right-0 hidden w-48 bg-gradient-to-r from-transparent via-emerald-300/35 to-emerald-200/10 lg:block" />
-        </div>
-
-        <div class="relative bg-slate-100 ring-1 ring-slate-200/80">
-          <video
-            class="h-full min-h-[320px] w-full object-cover object-center lg:min-h-[78vh]"
-            autoplay
-            muted
-            loop
-            playsinline
-            preload="metadata"
-            aria-label="Video principal de Erika M. Estefan Propiedades"
-          >
-            <source :src="HERO_VIDEO_SRC" type="video/webm" />
-          </video>
-          <div class="pointer-events-none absolute inset-y-0 left-0 hidden w-44 bg-gradient-to-r from-black/75 via-black/35 to-transparent lg:block" />
         </div>
       </div>
     </section>

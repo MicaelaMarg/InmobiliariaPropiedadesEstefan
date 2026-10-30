@@ -374,14 +374,8 @@ export async function fetchPropertiesPublic(filters = {}) {
       list = list.filter(p => (p.location + ' ' + p.city).toLowerCase().includes(loc))
     }
     if (filters.search) {
-      const q = filters.search.toLowerCase()
-      list = list.filter(
-        p =>
-          p.title?.toLowerCase().includes(q) ||
-          p.location?.toLowerCase().includes(q) ||
-          p.city?.toLowerCase().includes(q) ||
-          p.referenceCode?.toLowerCase().includes(q)
-      )
+      const q = filters.search.trim().toLowerCase()
+      list = list.filter(p => p.referenceCode?.toLowerCase().includes(q))
     }
     const total = list.length
     const totalPages = Math.max(Math.ceil(total / limit), 1)
