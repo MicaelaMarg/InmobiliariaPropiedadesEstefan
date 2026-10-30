@@ -1,7 +1,9 @@
 package com.inmobiliaria.api.filter;
 
+import com.inmobiliaria.api.repository.AdminUserRepository;
 import com.inmobiliaria.api.util.JsonUtil;
 import com.inmobiliaria.api.util.JwtUtil;
+import io.jsonwebtoken.Claims;
 import jakarta.servlet.Filter;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -31,8 +33,24 @@ public class AdminAuthFilter implements Filter {
       return;
     }
     String token = authorization.substring(7).trim();
-    if (!JwtUtil.isValid(token)) {
+    Claims claims;
+    try {
+      claims = JwtUtil.parseToken(token);
+    } catch (Exception e) {
       JsonUtil.writeError(httpResponse, HttpServletResponse.SC_UNAUTHORIZED, "Token inválido o expirado");
+      return;
+    }
+
+    // El token solo vale mientras el administrador siga existiendo (si se lo elimina, pierde el acceso enseguida).
+    try {
+      AdminUserRepository.AdminRow admin = new AdminUserRepository().findByEmail(claims.get("email", String.class));
+      Number userId = claims.get("userId", Number.class);
+      if (admin == null || userId == null || admin.id != userId.longValue()) {
+        JsonUtil.writeError(httpResponse, HttpServletResponse.SC_UNAUTHORIZED, "Token inválido o expirado");
+        return;
+      }
+    } catch (Exception e) {
+      JsonUtil.writeError(httpResponse, HttpServletResponse.SC_SERVICE_UNAVAILABLE, "No se pudo verificar la sesión");
       return;
     }
 

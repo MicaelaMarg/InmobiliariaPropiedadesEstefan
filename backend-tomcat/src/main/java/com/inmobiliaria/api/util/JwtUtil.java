@@ -7,6 +7,8 @@ import io.jsonwebtoken.security.Keys;
 import io.jsonwebtoken.security.SignatureException;
 import jakarta.servlet.ServletContext;
 import java.nio.charset.StandardCharsets;
+import java.security.SecureRandom;
+import java.util.Base64;
 import java.util.Date;
 import javax.crypto.SecretKey;
 
@@ -28,9 +30,21 @@ public final class JwtUtil {
       System.getenv("JWT_SECRET")
     );
     if (s == null || s.isBlank()) {
-      s = "inmobiliaria-dev-secret-cambiar-en-produccion";
+      // Sin JWT_SECRET no se usa una clave fija: el repositorio es público y cualquiera podría firmar tokens de admin.
+      // Una clave aleatoria por arranque es segura; solo obliga a volver a iniciar sesión cuando se reinicia el servidor.
+      System.err.println("[inmobiliaria] ADVERTENCIA: JWT_SECRET no está configurado. Se usa una clave aleatoria; "
+        + "las sesiones se cierran al reiniciar. Configurá JWT_SECRET (mínimo 32 caracteres) en el servidor.");
+      s = randomSecret();
+    } else if (s.getBytes(StandardCharsets.UTF_8).length < 32) {
+      System.err.println("[inmobiliaria] ADVERTENCIA: JWT_SECRET tiene menos de 32 caracteres. Usá una clave más larga.");
     }
     setSecret(s);
+  }
+
+  private static String randomSecret() {
+    byte[] bytes = new byte[48];
+    new SecureRandom().nextBytes(bytes);
+    return Base64.getEncoder().encodeToString(bytes);
   }
 
   public static String createToken(String email, long userId, long expirationMs) {
@@ -67,7 +81,12 @@ public final class JwtUtil {
   private static byte[] getSecretBytes() {
     String s = secret;
     if (s == null || s.isBlank()) {
-      s = "inmobiliaria-dev-secret-cambiar-en-produccion-min-32";
+      synchronized (JwtUtil.class) {
+        if (secret == null || secret.isBlank()) {
+          secret = randomSecret();
+        }
+        s = secret;
+      }
     }
     byte[] b = s.getBytes(StandardCharsets.UTF_8);
     // HS256 requiere al menos 32 bytes
