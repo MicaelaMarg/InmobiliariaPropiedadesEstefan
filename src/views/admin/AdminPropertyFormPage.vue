@@ -3,6 +3,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import PropertyForm from '../../components/property/PropertyForm.vue'
 import ImageUploader from '../../components/admin/ImageUploader.vue'
+import PropertyQrCode from '../../components/admin/PropertyQrCode.vue'
 import LoadingSpinner from '../../components/ui/LoadingSpinner.vue'
 import { fetchPropertyById, createProperty, updateProperty } from '../../services/properties'
 import { slugify } from '../../services/properties'
@@ -17,6 +18,8 @@ const error = ref('')
 const formData = ref({})
 const images = ref([])
 const originalImagesSnapshot = ref('[]')
+// Slug guardado en la base: es el que usa la ficha pública, así que el QR no cambia mientras se edita el formulario.
+const savedSlug = ref('')
 
 function normalizeYouTubeUrl(value) {
   const raw = (value || '').trim()
@@ -138,6 +141,7 @@ onMounted(async () => {
       const p = await fetchPropertyById(route.params.id)
       if (p) {
         formData.value = { ...p }
+        savedSlug.value = p.slug || ''
         images.value = p.images ? p.images.map(img => ({ ...img })) : []
         originalImagesSnapshot.value = createImagesSnapshot(images.value)
       } else {
@@ -240,6 +244,15 @@ function cancel() {
           <p class="mt-2 text-xs text-gray-500">Pegá el enlace del video y se mostrará en la ficha de la propiedad.</p>
         </div>
       </div>
+
+      <PropertyQrCode
+        v-if="isEdit && savedSlug"
+        :slug="savedSlug"
+        :title="formData.title || ''"
+        :reference-code="formData.referenceCode || ''"
+        :is-published="!!formData.isPublished"
+        class="mb-8"
+      />
 
       <div class="flex gap-3">
         <button type="button" class="btn-primary disabled:cursor-not-allowed disabled:opacity-70" :disabled="saving" @click="save">

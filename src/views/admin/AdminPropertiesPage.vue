@@ -5,6 +5,7 @@ import StatusBadge from '../../components/ui/StatusBadge.vue'
 import LoadingSpinner from '../../components/ui/LoadingSpinner.vue'
 import EmptyState from '../../components/ui/EmptyState.vue'
 import { fetchAllProperties, deleteProperty, updateProperty, createProperty, slugify } from '../../services/properties'
+import { downloadPropertyQr } from '../../utils/propertyQr'
 
 const router = useRouter()
 const route = useRoute()
@@ -83,6 +84,14 @@ async function duplicate(prop) {
     router.push({ name: 'AdminPropertyEdit', params: { id: created.id } })
   } catch (e) {
     alert('Error al duplicar: ' + (e.message || e))
+  }
+}
+
+async function downloadQr(prop) {
+  try {
+    await downloadPropertyQr(prop)
+  } catch (e) {
+    alert('Error al generar el QR: ' + (e.message || e))
   }
 }
 
@@ -199,6 +208,15 @@ const typeLabel = (type) => {
                   {{ p.isPublished ? 'Despublicar' : 'Publicar' }}
                 </button>
                 <button type="button" class="text-gray-500 hover:underline text-sm mr-2" @click="duplicate(p)">Duplicar</button>
+                <button
+                  v-if="p.slug"
+                  type="button"
+                  class="text-gray-500 hover:underline text-sm mr-2"
+                  title="Descargar código QR para imprimir"
+                  @click="downloadQr(p)"
+                >
+                  QR
+                </button>
                 <button type="button" class="text-red-600 hover:underline text-sm" @click="remove(p)">Eliminar</button>
               </td>
             </tr>
