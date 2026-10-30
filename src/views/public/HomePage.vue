@@ -12,10 +12,12 @@ const googleReviewsUrl = 'https://maps.app.goo.gl/j8Vnf6GnBffEAH9g6'
 // Video horizontal (16:9) para pantallas grandes y vertical (4:5) para celulares
 const HERO_VIDEOS = {
   desktop: {
+    av1: '/images/branding/inmobiliaria-escritorio-1920x1080-av1.mp4',
     webm: '/images/branding/inmobiliaria-escritorio-1920x1080.webm',
     mp4: '/images/branding/inmobiliaria-escritorio-1920x1080.mp4',
   },
   mobile: {
+    av1: '/images/branding/inmobiliaria-celular-1080x1350-av1.mp4',
     webm: '/images/branding/inmobiliaria-celular-1080x1350.webm',
     mp4: '/images/branding/inmobiliaria-celular-1080x1350.mp4',
   },
@@ -118,6 +120,8 @@ function goContact() {
         preload="auto"
         aria-label="Video principal de Erika M. Estefan Propiedades"
       >
+        <!-- AV1 pesa ~25% menos con la misma calidad; los navegadores que no lo soportan usan el siguiente formato -->
+        <source :src="heroVideo.av1" type='video/mp4; codecs="av01.0.08M.08"' />
         <source :src="heroVideo.webm" type="video/webm" />
         <source :src="heroVideo.mp4" type="video/mp4" />
       </video>
